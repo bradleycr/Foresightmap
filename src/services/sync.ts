@@ -28,6 +28,8 @@
  *   • Automatic "stale-on-focus" refresh: when the tab becomes visible again
  *     or regains focus after being idle, we publish a soft refresh so data
  *     reloads without the user having to hit reload.
+ *   • {@link publishLocalDataChanged} — same as publish, but this tab only
+ *     (used by the always-on heartbeat so sibling tabs aren't double-poked).
  *
  * Design notes
  * ------------
@@ -47,6 +49,7 @@ export type DataScope = "people" | "rsvps" | "checkins" | "events" | "all";
 export type DataChangeReason =
   | "write"       // local write (profile save, RSVP, check-in)
   | "focus"       // tab became visible after being idle
+  | "heartbeat"   // periodic soft refresh for always-on tabs
   | "manual"      // user explicitly asked for refresh
   | "remote";     // received from another tab via BroadcastChannel
 
@@ -173,6 +176,21 @@ export function publishDataChanged(scope: DataScope, reason: DataChangeReason = 
     // eslint-disable-next-line no-console
     console.warn("[sync] broadcast failed:", err);
   }
+}
+
+/**
+ * Soft-refresh this tab only — no BroadcastChannel fan-out.
+ *
+ * Used for heartbeats and other periodic refreshes where every signed-in tab
+ * already has its own timer; broadcasting would just make sibling tabs refetch
+ * twice. Same listener path as {@link publishDataChanged}, minus the noise.
+ */
+export function publishLocalDataChanged(
+  scope: DataScope,
+  reason: DataChangeReason = "heartbeat",
+): void {
+  ensureChannel();
+  dispatch({ scope, reason, at: Date.now() });
 }
 
 /** Subscribe to data-change notifications. Returns an unsubscribe function. */

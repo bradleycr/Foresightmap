@@ -17,7 +17,7 @@ import {
 } from "./services/database";
 import { AuthGate } from "./components/auth/AuthGate";
 import {
-  publishDataChanged,
+  publishLocalDataChanged,
   subscribeToDataChanges,
   subscribeToSyncErrors,
   type DataChangeMessage,
@@ -152,7 +152,9 @@ export default function App() {
     const onChange = (msg: DataChangeMessage) => {
       if (msg.scope !== "people" && msg.scope !== "all") return;
       invalidateDatabaseCache();
-      void loadData();
+      // Background sync must never flash the cold-load overlay — keep the
+      // current UI on screen while we swap in fresh people/events.
+      void loadData({ silent: true });
     };
     const unsubChange = subscribeToDataChanges(onChange);
 
@@ -180,16 +182,17 @@ export default function App() {
    * Focus/visibility refreshes cover people who leave and come back, but a node
    * display left open on the programming page never loses focus — so it would
    * otherwise show the events from whenever it was first opened. A gentle
-   * interval publishes an "all" refresh so those long-lived screens re-pull the
-   * sheet + live Luma merge on their own. `visibilitychange` guards it so we
-   * never fetch against a backgrounded tab.
+   * local-only "all" tick re-pulls the sheet + live Luma merge without
+   * BroadcastChannel fan-out (sibling tabs have their own timers) and without
+   * flashing the full-screen loader. `visibilitychange` guards it so we never
+   * fetch against a backgrounded tab.
    */
   useEffect(() => {
     if (!identity) return;
     const REFRESH_INTERVAL_MS = 15 * 60 * 1000; // 15 min — comfortably "at least daily"
     const tick = () => {
       if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
-      publishDataChanged("all", "manual");
+      publishLocalDataChanged("all", "heartbeat");
     };
     const timer = window.setInterval(tick, REFRESH_INTERVAL_MS);
     return () => window.clearInterval(timer);
@@ -297,10 +300,21 @@ export default function App() {
     };
   }, []);
 
-  const loadData = async () => {
+  /**
+   * Pull people / travel / events into React state.
+   *
+   * @param opts.silent  Skip the full-screen loading overlay and sticky error
+   *   banner. Used for focus/heartbeat/cross-tab sync so an open map or node
+   *   display never blanks out every refresh — failures keep the last good
+   *   snapshot on screen.
+   */
+  const loadData = async (opts?: { silent?: boolean }) => {
+    const silent = opts?.silent === true;
     try {
-      setIsLoading(true);
-      setError(null);
+      if (!silent) {
+        setIsLoading(true);
+        setError(null);
+      }
       const [peopleData, travelWindowsData, eventsData] = await Promise.all([
         getAllPeople(),
         getAllTravelWindows(),
@@ -309,6 +323,7 @@ export default function App() {
       setPeople(peopleData);
       setTravelWindows(travelWindowsData);
       setEvents(eventsData);
+      if (silent) setError(null);
     } catch (err) {
       // A rejected session means the directory is gated and our token is
       // gone/expired — drop identity so the AuthGate takes over cleanly.
@@ -319,10 +334,13 @@ export default function App() {
         return;
       }
       const errorMessage = err instanceof Error ? err.message : "Failed to load data";
-      setError(errorMessage);
-      toast.error("Failed to load data", { description: errorMessage });
+      if (!silent) {
+        setError(errorMessage);
+        toast.error("Failed to load data", { description: errorMessage });
+      }
+      // Silent refresh: keep the previous snapshot; next tick / focus can retry.
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   };
 
@@ -839,7 +857,7 @@ export default function App() {
         onClose={() => { setSelectedPersonId(null); setDetailNavContext(null); }}
         onNavigate={(id) => setSelectedPersonId(id)}
         onExpandNavigation={() => setDetailNavContext(null)}
-        onDataUpdate={loadData}
+        onDataUpdate={() => loadData({ silent: true })}
       />
 
       {isLoading && (
