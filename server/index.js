@@ -41,6 +41,7 @@ const rsvpsHandler = require("../api/rsvps");
 const checkinsHandler = require("../api/checkins");
 const communityStatsHandler = require("../api/community-stats");
 const suggestionsHandler = require("../api/suggestions");
+const pollsHandler = require("../api/polls");
 
 const app = express();
 const DEFAULT_PORT = 3001;
@@ -253,6 +254,7 @@ app.all("/api/rsvps", rsvpsHandler);
 app.all("/api/checkins", checkinsHandler);
 app.all("/api/community-stats", communityStatsHandler);
 app.all("/api/suggestions", suggestionsHandler);
+app.all("/api/polls", pollsHandler);
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });

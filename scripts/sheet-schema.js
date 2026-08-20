@@ -7,6 +7,7 @@
  * Tabs: RealData, TravelWindows, Suggestions, AdminUsers, RSVPs, Events,
  *       SignalCheckins, DailyTable-Berlin, DailyTable-SF.
  * The optional CheckIns tab (used by api/checkins.js for node check-in) is separate from SignalCheckins/DailyTable; not listed here.
+ * Polls + PollVotes are created on first use by api/polls.js (event QR polls).
  * Row 1 = headers; data from row 2. Arrays/objects stored as JSON strings.
  *
  * RealData is the canonical source of truth for people records. The legacy
@@ -37,6 +38,8 @@ const SHEET_NAMES = {
   SIGNAL_CHECKINS: "SignalCheckins",
   DAILY_TABLE_BERLIN: "DailyTable-Berlin",
   DAILY_TABLE_SF: "DailyTable-SF",
+  POLLS: "Polls",
+  POLL_VOTES: "PollVotes",
 };
 
 /** Try these in order when resolving the Real Data tab (sheet may use "Real Data" or "RealData"). */
@@ -181,6 +184,40 @@ const DAILY_TABLE_HEADERS = [
   "UpdatedAt",
 ];
 
+/**
+ * Live event polls (Mentimeter-style). One row per poll; status is draft | live | closed.
+ * `options` is a JSON array of `{ id, label }`. The public QR uses `slug`.
+ */
+const POLLS_HEADERS = [
+  "id",
+  "slug",
+  "eventId",
+  "eventTitle",
+  "question",
+  "options",
+  "status",
+  "createdByPersonId",
+  "createdByName",
+  "createdAt",
+  "updatedAt",
+  "closedAt",
+];
+
+/**
+ * Append-only votes. Latest row for (pollId, voterKey) wins so a phone can
+ * change its mind while the poll is live. Votes are anonymous: personId and
+ * fullName stay blank; voterKey is a hashed device token, not a directory id.
+ */
+const POLL_VOTES_HEADERS = [
+  "pollId",
+  "voterKey",
+  "personId",
+  "fullName",
+  "optionId",
+  "createdAt",
+  "updatedAt",
+];
+
 /** Resolve a DailyTable tab name from a node slug ("berlin" → "DailyTable-Berlin"). */
 function dailyTableTabName(nodeSlug) {
   const label = { berlin: "Berlin", sf: "SF" }[nodeSlug];
@@ -229,6 +266,8 @@ module.exports = {
   EVENTS_HEADERS,
   SIGNAL_CHECKINS_HEADERS,
   DAILY_TABLE_HEADERS,
+  POLLS_HEADERS,
+  POLL_VOTES_HEADERS,
   dailyTableTabName,
   isLocationUnspecified,
   getSheetColumnLetter,

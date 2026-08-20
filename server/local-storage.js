@@ -45,6 +45,8 @@ function normalizeLocalDatabase(raw) {
     rsvps: Array.isArray(base.rsvps) ? base.rsvps : [],
     events: Array.isArray(base.events) ? base.events : [],
     checkins: Array.isArray(base.checkins) ? base.checkins : [],
+    polls: Array.isArray(base.polls) ? base.polls : [],
+    pollVotes: Array.isArray(base.pollVotes) ? base.pollVotes : [],
     meta: {
       updatedAt:
         base.meta && typeof base.meta === "object" && typeof base.meta.updatedAt === "string"
@@ -56,6 +58,25 @@ function normalizeLocalDatabase(raw) {
 
 function defaultPeople() {
   return [
+    {
+      id: "mock-person-casey",
+      fullName: "Casey Staff",
+      roleType: "Foresight Team",
+      fellowshipCohortYear: 2026,
+      fellowshipEndYear: null,
+      affiliationOrInstitution: "Foresight Institute",
+      focusTags: ["Community"],
+      currentCity: "Berlin",
+      currentCountry: "Germany",
+      currentCoordinates: { lat: 52.52, lng: 13.405 },
+      primaryNode: "Berlin Node",
+      profileUrl: "",
+      profileImageUrl: null,
+      contactUrlOrHandle: "@casey",
+      shortProjectTagline: "Hosts node polls in local mock mode.",
+      expandedProjectDescription: "Staff seed profile so /polls admin can be tested locally.",
+      isAlumni: false,
+    },
     {
       id: "mock-person-alice",
       fullName: "Alice Example",
@@ -145,6 +166,8 @@ function defaultMockDatabase() {
     rsvps: [],
     events: defaultEvents(),
     checkins: [],
+    polls: [],
+    pollVotes: [],
     meta: { updatedAt: new Date().toISOString() },
   };
 }
@@ -800,6 +823,49 @@ async function appendLocalCheckin(input) {
   return row;
 }
 
+async function upsertLocalPoll(poll) {
+  const db = await getLocalDatabase();
+  const next = {
+    id: String(poll.id || "").trim(),
+    slug: String(poll.slug || "").trim(),
+    eventId: String(poll.eventId || "").trim(),
+    eventTitle: String(poll.eventTitle || "").trim(),
+    question: String(poll.question || "").trim(),
+    options: Array.isArray(poll.options) ? poll.options : [],
+    status: String(poll.status || "draft").trim(),
+    createdByPersonId: String(poll.createdByPersonId || "").trim(),
+    createdByName: String(poll.createdByName || "").trim(),
+    createdAt: String(poll.createdAt || new Date().toISOString()),
+    updatedAt: String(poll.updatedAt || new Date().toISOString()),
+    closedAt: String(poll.closedAt || ""),
+  };
+  if (!next.id || !next.slug) throw new Error("Poll id and slug are required.");
+  const index = db.polls.findIndex((row) => row.id === next.id || row.slug === next.slug);
+  if (index >= 0) db.polls[index] = next;
+  else db.polls.push(next);
+  await saveLocalDatabase(db);
+  return next;
+}
+
+async function appendLocalPollVote(vote) {
+  const db = await getLocalDatabase();
+  const row = {
+    pollId: String(vote.pollId || "").trim(),
+    voterKey: String(vote.voterKey || "").trim(),
+    personId: String(vote.personId || "").trim(),
+    fullName: String(vote.fullName || "").trim(),
+    optionId: String(vote.optionId || "").trim(),
+    createdAt: String(vote.createdAt || new Date().toISOString()),
+    updatedAt: String(vote.updatedAt || new Date().toISOString()),
+  };
+  if (!row.pollId || !row.voterKey || !row.optionId) {
+    throw new Error("pollId, voterKey, and optionId are required.");
+  }
+  db.pollVotes.push(row);
+  await saveLocalDatabase(db);
+  return row;
+}
+
 async function appendLocalSuggestion(input) {
   const db = await getLocalDatabase();
   const row = {
@@ -864,6 +930,8 @@ module.exports = {
   listLocalCheckins,
   appendLocalCheckin,
   appendLocalSuggestion,
+  upsertLocalPoll,
+  appendLocalPollVote,
   getMockLumaEvents,
   getMockLumaGuests,
   getMockCalendarEvents,

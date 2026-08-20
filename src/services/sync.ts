@@ -43,7 +43,7 @@
  */
 
 /** Scope of data that has changed. Granular so consumers can refetch cheaply. */
-export type DataScope = "people" | "rsvps" | "checkins" | "events" | "all";
+export type DataScope = "people" | "rsvps" | "checkins" | "events" | "polls" | "all";
 
 /** Reason for a sync broadcast — purely informational, for logs/UI. */
 export type DataChangeReason =

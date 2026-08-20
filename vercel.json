@@ -18,6 +18,8 @@
     { "source": "/connections", "destination": "/index.html" },
     { "source": "/calendar", "destination": "/index.html" },
     { "source": "/stats", "destination": "/index.html" },
+    { "source": "/polls", "destination": "/index.html" },
+    { "source": "/polls/:path*", "destination": "/index.html" },
     { "source": "/claim", "destination": "/index.html" },
     { "source": "/join", "destination": "/index.html" }
   ]

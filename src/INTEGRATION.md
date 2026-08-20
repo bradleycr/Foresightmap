@@ -24,7 +24,7 @@ Important routes (implement or proxy these for a drop-in replacement):
 | POST | `/api/member-register` | New directory profile |
 | POST | `/api/profile` | Save profile for authenticated member |
 | GET/POST | `/api/rsvps` | Event RSVPs (`src/services/rsvp.ts`) |
-| GET/POST | `/api/checkins` | Web check-ins (`src/services/checkin.ts`) |
+| GET/POST | `/api/polls` | Event polls (`src/services/polls.ts`) — public vote by slug; admin list with session |
 | POST | `/api/suggestions` | “Suggest an update” form |
 
 Exact bodies and headers are defined in the service modules above. Optional write protection: `X-Foresight-Write-Secret` when `FORESIGHT_PUBLIC_WRITE_SECRET` / `VITE_FORESIGHT_WRITE_SECRET` are set.

@@ -32,7 +32,7 @@
 - **CSS `@import` warning.** Build may emit a PostCSS warning about `@import` order; cosmetic only.
 - **Timeline view.** The Timeline tab exists but is “Coming soon” in the UI.
 - **Vite port.** Dev server runs on port **3000** (set in `vite.config.ts`), not Vite’s default 5173.
-- **Routes.** `/` map · `/berlin` `/sf` `/global` programming · `/profile` directory · `/calendar` · `/connections` · `/checkin` (and `/checkin/berlin` etc.). Client-side routing; base-path-aware for GitHub Pages (see `src/utils/router.ts`).
+- **Routes.** `/` map · `/berlin` `/sf` `/global` programming · `/profile` directory · `/calendar` · `/connections` · `/checkin` (and `/checkin/berlin` etc.) · `/stats` (unlisted) · `/polls` (unlisted admin; `/polls/:slug` public vote, `/polls/:slug/live` projector). Client-side routing; base-path-aware for GitHub Pages (see `src/utils/router.ts`).
 - **Mobile map behavior.** On mobile, when the filtered marker set is small (≤50), the map fits the view to those markers so users don’t have to pan to find grantees or event RSVPs.
 - **Mock strategy (important).** Follow existing config-driven backend injection: `pnpm dev` selects `server/index.js` (sheet-backed) vs `server/index.mock.js` (file-backed) based on credentials in `scripts/start-dev.js`. Frontend services should stay API-first and should not add separate frontend-only mock toggles for core data flows.
 - **Google Sheets.** Source of truth for people and directory auth. See `docs/SHEETS_SYNC.md`.

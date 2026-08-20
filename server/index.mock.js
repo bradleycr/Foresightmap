@@ -44,6 +44,7 @@ const {
   verifyRegisterToken,
 } = require("./directory-auth");
 const { assertPublicWriteSecret } = require("./public-write-secret");
+const pollsHandler = require("../api/polls");
 
 const app = express();
 const DEFAULT_PORT = 3001;
@@ -350,6 +351,8 @@ app.get("/api/calendar-events", async (req, res) => {
     });
   }
 });
+
+app.all("/api/polls", pollsHandler);
 
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });

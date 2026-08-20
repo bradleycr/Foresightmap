@@ -36,12 +36,16 @@ import { CalendarPage } from "./pages/CalendarPage";
 import { CheckInPage } from "./pages/CheckInPage";
 import { ClaimPage } from "./pages/ClaimPage";
 import { StatsPage } from "./pages/StatsPage";
+import { PollsPage } from "./pages/PollsPage";
+import { PollVotePage } from "./pages/PollVotePage";
+import { PollLivePage } from "./pages/PollLivePage";
 import type { NodeSlug } from "./types/events";
 import {
   getRoutePath,
   buildFullPath,
   consumeRedirectPath,
 } from "./utils/router";
+import { parsePollsRoute, isPollsPublicRoute } from "./utils/pollRoutes";
 import { personNeedsLocation, profileLocationSetupPath, isLocationSetupDismissed, dismissLocationSetupForSession } from "./utils/locationSetup";
 import { LocationMapNudge } from "./components/profile/LocationMapNudge";
 import {
@@ -210,7 +214,7 @@ export default function App() {
   // Keep SPA routing in sync with browser history
   useEffect(() => {
     const handlePop = () => setRoute(getRoutePath());
-    const knownRoutes = ["/", "/berlin", "/sf", "/global", "/profile", "/connections", "/calendar", "/stats", "/claim", "/join"];
+    const knownRoutes = ["/", "/berlin", "/sf", "/global", "/profile", "/connections", "/calendar", "/stats", "/claim", "/join", "/polls"];
     const current = getRoutePath();
     // Check-in routes are dynamic (/checkin/berlin, /checkin/sf, /checkin/global)
     // so we match them with a prefix rather than an exact list entry. Bare
@@ -220,7 +224,8 @@ export default function App() {
       current === "/checkin/berlin" ||
       current === "/checkin/sf" ||
       current === "/checkin/global";
-    if (!knownRoutes.includes(current) && !isCheckInRoute) {
+    const isPollsDeepLink = parsePollsRoute(current) !== null;
+    if (!knownRoutes.includes(current) && !isCheckInRoute && !isPollsDeepLink) {
       window.history.replaceState({}, "", buildFullPath("/"));
       setRoute("/");
     }
@@ -447,7 +452,8 @@ export default function App() {
     if (
       route === "/profile" ||
       route === "/calendar" ||
-      route.startsWith("/checkin")
+      route.startsWith("/checkin") ||
+      route === "/polls"
     ) {
       navigate("/");
     }
@@ -579,6 +585,8 @@ export default function App() {
   const isConnectionsRoute = route === "/connections";
   const isCalendarRoute = route === "/calendar";
   const isStatsRoute = route === "/stats";
+  const pollsRoute = parsePollsRoute(route);
+  const isPollsAdminRoute = pollsRoute?.kind === "admin";
   /**
    * Check-in route detection. Supports the three canonical slugs plus a bare
    * "/checkin" (we default to Berlin when signed in to avoid a dead-end 404;
@@ -612,6 +620,7 @@ export default function App() {
   const isMapRoute = route === "/" || route === "";
   /** Magic-link onboarding — no chrome; the form needs the full viewport. */
   const isTokenOnboardingRoute = !identity && (isClaimRoute || isJoinRoute);
+  const isPollsPublicExperience = isPollsPublicRoute(route);
   /*
    * Resolve the signed-in member's record. Prefer the public directory copy
    * (kept in sync by edits across tabs), but fall back to the auth-sourced
@@ -680,6 +689,17 @@ export default function App() {
       identity={identity}
       onNavigateHome={() => navigate("/")}
     />
+  ) : isPollsAdminRoute ? (
+    <PollsPage
+      identity={identity}
+      events={events}
+      onNavigateHome={() => navigate("/")}
+      onNavigate={navigate}
+    />
+  ) : pollsRoute?.kind === "vote" ? (
+    <PollVotePage slug={pollsRoute.slug} identity={identity} />
+  ) : pollsRoute?.kind === "live" ? (
+    <PollLivePage slug={pollsRoute.slug} />
   ) : isCalendarRoute ? (
     <CalendarPage
       identity={identity}
@@ -777,9 +797,9 @@ export default function App() {
    * Whole-app auth gate. This is an internal tool: nothing renders until a
    * member is signed in. The only exceptions are the magic-link flows that a
    * signed-out person legitimately needs — claiming an existing profile and
-   * the invite-only join page — which carry their own signed tokens.
+   * the invite-only join page — plus public event-poll QR / projector pages.
    */
-  if (!identity && !isClaimRoute && !isJoinRoute) {
+  if (!identity && !isClaimRoute && !isJoinRoute && !isPollsPublicExperience) {
     return (
       <>
         <AuthGate route={route} onSignIn={handleDirectorySignIn} />
@@ -788,7 +808,7 @@ export default function App() {
     );
   }
 
-  if (isTokenOnboardingRoute) {
+  if (isTokenOnboardingRoute || isPollsPublicExperience) {
     return (
       <>
         <div
