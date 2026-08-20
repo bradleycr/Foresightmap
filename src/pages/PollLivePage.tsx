@@ -92,17 +92,17 @@ export function PollLivePage({ slug }: PollLivePageProps) {
       ) : null}
 
       {poll ? (
-        <div className="mt-8 grid flex-1 grid-cols-1 items-start gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-14">
+        <div className="mt-8 grid flex-1 grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-12">
           <div>
             {poll.eventTitle ? (
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700/80">
                 {poll.eventTitle}
               </p>
             ) : null}
-            <h1 className="font-heading mt-2 text-3xl font-bold leading-tight text-gray-900 sm:text-4xl lg:text-5xl">
+            <h1 className="font-heading mt-2 text-2xl font-bold leading-tight text-gray-900 sm:text-4xl lg:text-5xl">
               {poll.question}
             </h1>
-            <div className="mt-10">
+            <div className="mt-8 max-h-[min(70vh,40rem)] overflow-y-auto pr-1">
               <PollResultsBars
                 results={poll.results}
                 totalVotes={poll.totalVotes}

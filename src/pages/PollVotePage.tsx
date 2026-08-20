@@ -1,10 +1,8 @@
 /**
  * Public vote screen — what a phone sees after scanning the poll QR.
  *
- * No Atlas account. Votes are anonymous — we never store a name or member id.
- * One tap records a vote; tapping another option while the poll is live updates it.
- * the poll is live updates it. Results appear after the first vote so the
- * room can watch the bars move.
+ * Votes are anonymous. Built for thumbs: compact rows, search when the list
+ * is long (favourite-project polls), sticky confirmation of the current pick.
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -12,12 +10,12 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import foresightIconUrl from "../assets/Foresight_RGB_Icon_Black.png?url";
 import { FORESIGHT_ORG_URL } from "../constants/foresight";
+import { PollOptionPicker } from "../components/polls/PollOptionPicker";
 import { PollResultsBars } from "../components/polls/PollResultsBars";
 import { fetchPublicPoll, voteOnPoll } from "../services/polls";
 import { subscribeToDataChanges } from "../services/sync";
 import type { Identity } from "../services/identity";
 import type { PollPublic } from "../types/polls";
-import { cn } from "../components/ui/utils";
 
 const GRADIENT = "linear-gradient(135deg, #eef2ff 0%, #fdf2f8 55%, #f5f3ff 100%)";
 
@@ -31,6 +29,7 @@ export function PollVotePage({ slug, identity }: PollVotePageProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showAllResults, setShowAllResults] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -77,22 +76,25 @@ export function PollVotePage({ slug, identity }: PollVotePageProps) {
     }
   };
 
+  const longList = (poll?.options.length ?? 0) >= 8;
+  const resultLimit = showAllResults || !longList ? 0 : 5;
+
   return (
     <div
-      className="flex min-h-[100svh] flex-col items-center justify-start px-5 py-10 sm:min-h-[100dvh] sm:justify-center sm:py-12"
+      className="flex min-h-[100svh] flex-col px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-6 sm:min-h-[100dvh] sm:items-center sm:px-5 sm:py-10"
       style={{ background: GRADIENT }}
     >
-      <div className="w-full max-w-md">
-        <div className="mb-8 flex flex-col items-center text-center">
+      <div className="mx-auto w-full max-w-md">
+        <div className="mb-5 flex items-center gap-3 sm:mb-8 sm:flex-col sm:text-center">
           <a
             href={FORESIGHT_ORG_URL}
             target="_blank"
             rel="noreferrer"
-            className="flex size-14 items-center justify-center rounded-3xl border border-white/80 bg-white/90 shadow-sm"
+            className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-white/80 bg-white/90 shadow-sm sm:size-14 sm:rounded-3xl"
           >
-            <img src={foresightIconUrl} alt="Foresight Institute" className="size-8" />
+            <img src={foresightIconUrl} alt="Foresight Institute" className="size-6 sm:size-8" />
           </a>
-          <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-700/80">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-700/80">
             The Foresight Atlas · Poll
           </p>
         </div>
@@ -112,68 +114,58 @@ export function PollVotePage({ slug, identity }: PollVotePageProps) {
         ) : null}
 
         {poll ? (
-          <div className="rounded-[1.75rem] border border-white/70 bg-white/90 p-6 shadow-xl backdrop-blur-md sm:p-8">
+          <div className="rounded-[1.5rem] border border-white/70 bg-white/90 p-4 shadow-xl backdrop-blur-md sm:rounded-[1.75rem] sm:p-7">
             {poll.eventTitle ? (
               <p className="text-xs font-medium uppercase tracking-wider text-slate-500">
                 {poll.eventTitle}
               </p>
             ) : null}
-            <h1 className="font-heading mt-1 text-2xl font-bold leading-snug text-gray-900 sm:text-[1.65rem]">
+            <h1 className="font-heading mt-1 text-[1.35rem] font-bold leading-snug text-gray-900 sm:text-2xl">
               {poll.question}
             </h1>
 
             {poll.status === "closed" ? (
-              <p className="mt-3 text-sm text-gray-600">Voting is closed. Here’s how the room landed.</p>
+              <p className="mt-2 text-sm text-gray-600">Voting is closed. Here’s how the room landed.</p>
             ) : (
-              <p className="mt-3 text-sm text-gray-600">
-                Tap one answer. You can change it until the host closes the poll.
+              <p className="mt-2 text-sm text-gray-600">
+                {longList
+                  ? "Search or scroll, then tap one. You can change it until the host closes."
+                  : "Tap one answer. You can change it until the host closes the poll."}
               </p>
             )}
 
-            <div className="mt-6 space-y-2.5">
-              {poll.options.map((option) => {
-                const selected = poll.yourOptionId === option.id;
-                const locked = poll.status !== "live";
-                return (
-                  <button
-                    key={option.id}
-                    type="button"
-                    disabled={locked || saving}
-                    onClick={() => void handleVote(option.id)}
-                    className={cn(
-                      "flex min-h-[56px] w-full items-center rounded-2xl border px-4 py-3 text-left text-base font-medium transition-colors touch-manipulation",
-                      selected
-                        ? "border-sky-400 bg-sky-50 text-sky-950 shadow-sm"
-                        : "border-gray-200 bg-white text-gray-900 hover:border-sky-200 hover:bg-sky-50/40",
-                      locked && "cursor-default opacity-90",
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "mr-3 flex size-6 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold",
-                        selected
-                          ? "border-sky-500 bg-sky-600 text-white"
-                          : "border-gray-300 text-gray-500",
-                      )}
-                    >
-                      {option.id.toUpperCase()}
-                    </span>
-                    {option.label}
-                  </button>
-                );
-              })}
-            </div>
+            {poll.status === "live" ? (
+              <div className="mt-4">
+                <PollOptionPicker
+                  options={poll.options}
+                  selectedId={poll.yourOptionId}
+                  disabled={saving}
+                  onSelect={(id) => void handleVote(id)}
+                />
+              </div>
+            ) : null}
 
-            {poll.yourOptionId || poll.status === "closed" || poll.totalVotes > 0 ? (
-              <div className="mt-8 border-t border-gray-100 pt-6">
+            {poll.status === "closed" || poll.yourOptionId || poll.totalVotes > 0 ? (
+              <div className={poll.status === "live" ? "mt-6 border-t border-gray-100 pt-5" : "mt-5"}>
                 <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
                   {poll.totalVotes} vote{poll.totalVotes === 1 ? "" : "s"}
+                  {longList && !showAllResults ? " · top 5" : ""}
                 </p>
                 <PollResultsBars
                   results={poll.results}
                   totalVotes={poll.totalVotes}
                   highlightId={poll.yourOptionId}
+                  limit={poll.status === "closed" ? 0 : resultLimit}
                 />
+                {longList && poll.status !== "closed" && poll.results.length > 5 ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllResults((v) => !v)}
+                    className="mt-3 min-h-[40px] text-sm font-medium text-sky-700"
+                  >
+                    {showAllResults ? "Show top 5" : `See all ${poll.results.length} results`}
+                  </button>
+                ) : null}
               </div>
             ) : null}
           </div>

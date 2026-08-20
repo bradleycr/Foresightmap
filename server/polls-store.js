@@ -30,10 +30,10 @@ const { isLocalMockMode } = require("./local-storage");
 const TEAM_ROLE = "Foresight Team";
 const STATUSES = new Set(["draft", "live", "closed"]);
 const SLUG_ALPHABET = "23456789abcdefghjkmnpqrstuvwxyz";
-const MAX_OPTIONS = 8;
+const MAX_OPTIONS = 48;
 const MIN_OPTIONS = 2;
 const MAX_QUESTION = 200;
-const MAX_OPTION = 80;
+const MAX_OPTION = 120;
 
 function sheetsId() {
   return getSpreadsheetId();
@@ -92,7 +92,7 @@ function parseOptions(raw) {
 }
 
 function optionIdFromIndex(index) {
-  return String.fromCharCode(97 + index); // a, b, c, …
+  return String(index + 1);
 }
 
 function normalizeOptions(input) {
@@ -108,7 +108,9 @@ function normalizeOptions(input) {
       throw new Error(`Each option must be ${MAX_OPTION} characters or fewer.`);
     }
     options.push({ id: optionIdFromIndex(options.length), label });
-    if (options.length >= MAX_OPTIONS) break;
+  }
+  if (options.length > MAX_OPTIONS) {
+    throw new Error(`Keep it to ${MAX_OPTIONS} options or fewer.`);
   }
   if (options.length < MIN_OPTIONS) {
     throw new Error(`Add at least ${MIN_OPTIONS} options.`);

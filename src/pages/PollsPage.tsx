@@ -42,6 +42,7 @@ interface PollsPageProps {
 }
 
 const EMPTY_OPTIONS = ["", ""];
+const MAX_POLL_OPTIONS = 48;
 
 export function PollsPage({
   identity,
@@ -55,6 +56,8 @@ export function PollsPage({
   const [error, setError] = useState<string | null>(null);
   const [question, setQuestion] = useState("");
   const [options, setOptions] = useState<string[]>(EMPTY_OPTIONS);
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [pasteText, setPasteText] = useState("");
   const [eventId, setEventId] = useState("");
   const [saving, setSaving] = useState(false);
   const [qrPoll, setQrPoll] = useState<PollAdmin | null>(null);
@@ -111,6 +114,8 @@ export function PollsPage({
       setPolls((prev) => [poll, ...prev.filter((p) => p.id !== poll.id)]);
       setQuestion("");
       setOptions(EMPTY_OPTIONS);
+      setPasteText("");
+      setPasteOpen(false);
       setEventId("");
       toast.success("Draft saved. Go live when the room is ready.");
     } catch (err) {
@@ -194,8 +199,8 @@ export function PollsPage({
           <section className="mt-10 rounded-[1.5rem] border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
             <h2 className="text-base font-semibold text-gray-900">New poll</h2>
             <p className="mt-1 text-sm text-gray-500">
-              One question, two to eight short options. Tie it to an event so it
-              lands in that event’s archive.
+              One question, two to {MAX_POLL_OPTIONS} options — short lists or a
+              favourite-project ballot. Paste a list if you already have names.
             </p>
             <div className="mt-5 space-y-4">
               <div>
@@ -239,10 +244,18 @@ export function PollsPage({
                 </select>
               </div>
               <div>
-                <Label>Options</Label>
-                <div className="mt-1.5 space-y-2">
+                <div className="flex items-end justify-between gap-3">
+                  <Label>Options</Label>
+                  <p className="text-xs tabular-nums text-gray-500">
+                    {options.filter((o) => o.trim()).length} / {MAX_POLL_OPTIONS}
+                  </p>
+                </div>
+                <div className="mt-1.5 max-h-[min(50vh,28rem)] space-y-2 overflow-y-auto pr-0.5">
                   {options.map((option, index) => (
                     <div key={index} className="flex gap-2">
+                      <span className="mt-2.5 w-6 shrink-0 text-right text-xs tabular-nums text-gray-400">
+                        {index + 1}
+                      </span>
                       <Input
                         value={option}
                         onChange={(e) => {
@@ -252,7 +265,7 @@ export function PollsPage({
                         }}
                         placeholder={`Option ${index + 1}`}
                         className="min-h-[44px]"
-                        maxLength={80}
+                        maxLength={120}
                       />
                       {options.length > 2 ? (
                         <button
@@ -267,15 +280,55 @@ export function PollsPage({
                     </div>
                   ))}
                 </div>
-                {options.length < 8 ? (
+                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+                  {options.length < MAX_POLL_OPTIONS ? (
+                    <button
+                      type="button"
+                      onClick={() => setOptions([...options, ""])}
+                      className="inline-flex min-h-[40px] items-center gap-1.5 text-sm font-medium text-sky-700 hover:text-sky-900"
+                    >
+                      <Plus className="size-4" />
+                      Add option
+                    </button>
+                  ) : null}
                   <button
                     type="button"
-                    onClick={() => setOptions([...options, ""])}
-                    className="mt-2 inline-flex min-h-[40px] items-center gap-1.5 text-sm font-medium text-sky-700 hover:text-sky-900"
+                    onClick={() => setPasteOpen((v) => !v)}
+                    className="inline-flex min-h-[40px] items-center text-sm font-medium text-gray-600 hover:text-gray-900"
                   >
-                    <Plus className="size-4" />
-                    Add option
+                    {pasteOpen ? "Hide paste list" : "Paste a list"}
                   </button>
+                </div>
+                {pasteOpen ? (
+                  <div className="mt-3">
+                    <textarea
+                      value={pasteText}
+                      onChange={(e) => setPasteText(e.target.value)}
+                      rows={6}
+                      placeholder={"One option per line\nProject Alpha\nProject Beta"}
+                      className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm outline-none focus-visible:border-sky-400 focus-visible:ring-2 focus-visible:ring-sky-200"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="mt-2 min-h-[44px]"
+                      onClick={() => {
+                        const lines = pasteText
+                          .split(/\r?\n/)
+                          .map((line) => line.trim())
+                          .filter(Boolean)
+                          .slice(0, MAX_POLL_OPTIONS);
+                        if (lines.length < 2) {
+                          toast.error("Paste at least two options, one per line.");
+                          return;
+                        }
+                        setOptions(lines);
+                        setPasteOpen(false);
+                      }}
+                    >
+                      Use this list
+                    </Button>
+                  </div>
                 ) : null}
               </div>
               <Button
@@ -415,7 +468,7 @@ function PollSection({
                   ) : null}
                   <p className="font-heading text-lg font-bold text-gray-900">{poll.question}</p>
                   <p className="mt-1 text-xs text-gray-500">
-                    {poll.options.map((o) => o.label).join(" · ")}
+                    {poll.options.length} option{poll.options.length === 1 ? "" : "s"}
                     {poll.totalVotes ? ` · ${poll.totalVotes} votes` : ""}
                   </p>
                 </div>
