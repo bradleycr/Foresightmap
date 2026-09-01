@@ -28,6 +28,7 @@ import {
   probeProfileImageUrl,
 } from "../utils/profileImageUrl";
 import { getNode } from "../data/nodes";
+import { peekRegisterInviteRole } from "../utils/inviteToken";
 import { buildFullPath } from "../utils/router";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -191,6 +192,7 @@ export function ProfilePage({
   const [nanoTick, setNanoTick] = useState(0);
   /** User tapped "I'll do this later" on the location onboarding card. */
   const [locationSetupHidden, setLocationSetupHidden] = useState(false);
+  const inviteLockedRole = peekRegisterInviteRole(inviteToken);
 
   useEffect(() => {
     setLocationSetupHidden(false);
@@ -230,9 +232,13 @@ export function ProfilePage({
   /** In create mode without identity, keep draft as empty person (or user edits). Don’t overwrite with null. */
   useEffect(() => {
     if (createMode && !identity && !draft) {
-      setDraft(EMPTY_PERSON);
+      setDraft(
+        inviteLockedRole
+          ? { ...EMPTY_PERSON, roleType: inviteLockedRole, roleTypes: [inviteLockedRole] }
+          : EMPTY_PERSON,
+      );
     }
-  }, [createMode, identity, draft]);
+  }, [createMode, identity, draft, inviteLockedRole]);
 
   /** Sync create-form focus from draft when entering create mode or draft tags change. */
   useEffect(() => {
@@ -424,7 +430,7 @@ export function ProfilePage({
         }
         setIsSaving(true);
         try {
-          const roleType = createDraft.roleType;
+          const roleType = inviteLockedRole || createDraft.roleType;
           const payload = {
             ...createDraft,
             roleType,
@@ -475,10 +481,14 @@ export function ProfilePage({
                 <img src={foresightIconUrl} alt="" className="size-8 object-contain opacity-30" aria-hidden />
               </div>
               <h1 className="mt-4 text-2xl font-semibold tracking-tight text-gray-900">
-                Add yourself to the directory
+                {inviteLockedRole === "Nodee"
+                  ? "Join the Atlas as a Nodee"
+                  : "Add yourself to the directory"}
               </h1>
               <p className="mt-2 max-w-xl text-sm leading-6 text-gray-500">
-                Not in the list? Add your details below; you&apos;ll appear on the map and in the directory.
+                {inviteLockedRole === "Nodee"
+                  ? "Welcome. Create your Nodee profile below — you'll show up on the map and in the directory. Pick Berlin or San Francisco as your primary node if that's where you're based."
+                  : "Not in the list? Add your details below; you'll appear on the map and in the directory."}
               </p>
             </div>
 
@@ -497,10 +507,19 @@ export function ProfilePage({
                       placeholder="First and last name"
                     />
                   </Field>
-                  <Field label="Role type" required description="Pick the role that best describes you.">
+                  <Field
+                    label="Role type"
+                    required
+                    description={
+                      inviteLockedRole
+                        ? "Set by your invite link."
+                        : "Pick the role that best describes you."
+                    }
+                  >
                     <RoleTypeSelect
-                      value={createDraft.roleType}
+                      value={inviteLockedRole || createDraft.roleType}
                       onChange={(role) => updateCreateDraft("roleType", role)}
+                      locked={Boolean(inviteLockedRole)}
                     />
                   </Field>
                   <Field label="Cohort year" required>
@@ -1740,12 +1759,18 @@ function ProfileEventList({
 function RoleTypeSelect({
   value,
   onChange,
+  locked = false,
 }: {
   value: RoleType;
   onChange: (role: RoleType) => void;
+  locked?: boolean;
 }) {
   return (
-    <Select value={value} onValueChange={(v: RoleType) => onChange(v)}>
+    <Select
+      value={value}
+      onValueChange={(v: RoleType) => onChange(v)}
+      disabled={locked}
+    >
       <SelectTrigger>
         <SelectValue placeholder="Select a role" />
       </SelectTrigger>

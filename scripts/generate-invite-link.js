@@ -3,20 +3,22 @@
  * Mint a private "create new account" invite link.
  *
  * Account creation is invite-only — there is no public "Add yourself" button.
- * Run this to get a /join?token=… link, then send it to a NEW community member
- * — fellow, grantee, nodee, or alumni not yet on the roster. The token is
- * signed and time-limited; anyone with the link can create exactly one
- * profile until it expires.
+ * Run this to get a /join?token=… link, then send it to NEW community members
+ * not yet on the roster. The token is signed and time-limited; anyone with
+ * the URL can create a profile until it expires (it is reusable, not one-time).
+ *
+ * Pass --role Nodee to lock the join form to Nodee (standing node onboarding).
+ * Staff roles (Foresight Team, Senior Fellow) cannot be locked into an invite.
  *
  * For people who ARE already on the roster, use `pnpm claim:links` instead —
  * those set a password on the existing row.
  *
  * Usage:
- *   node scripts/generate-invite-link.js [--base <url>] [--count N] [--days D]
+ *   node scripts/generate-invite-link.js [--base <url>] [--count N] [--days D] [--role Role]
  *
  * Examples:
- *   CLAIM_BASE_URL=https://map.foresight.org node scripts/generate-invite-link.js
- *   node scripts/generate-invite-link.js --base https://map.foresight.org --count 3 --days 14
+ *   pnpm invite:link -- --role Nodee --days 365 --base https://atlas.foresight.org
+ *   CLAIM_BASE_URL=https://atlas.foresight.org node scripts/generate-invite-link.js
  *
  * Env (loaded from .env.local / .env):
  *   DIRECTORY_SESSION_SECRET (or SESSION_SECRET) — MUST match the deployed
@@ -30,10 +32,12 @@ require("dotenv").config();
 const { issueRegisterToken } = require("../server/directory-auth");
 
 function parseArgs(argv) {
-  const args = { base: process.env.CLAIM_BASE_URL || "", count: 1, days: 30 };
+  const args = { base: process.env.CLAIM_BASE_URL || "", count: 1, days: 30, role: "" };
   for (let i = 2; i < argv.length; i += 1) {
     const arg = argv[i];
-    if (arg === "--base") {
+    if (arg === "--" || arg === "--help" || arg === "-h") {
+      continue;
+    } else if (arg === "--base") {
       args.base = argv[i + 1] || "";
       i += 1;
     } else if (arg === "--count") {
@@ -41,6 +45,9 @@ function parseArgs(argv) {
       i += 1;
     } else if (arg === "--days") {
       args.days = Math.max(1, Number.parseInt(argv[i + 1] || "30", 10) || 30);
+      i += 1;
+    } else if (arg === "--role") {
+      args.role = String(argv[i + 1] || "").trim();
       i += 1;
     }
   }
@@ -69,13 +76,16 @@ function main() {
   }
 
   const ttlMs = args.days * 24 * 60 * 60 * 1000;
+  const options = args.role ? { roleType: args.role } : {};
+  const expiresAt = new Date(Date.now() + ttlMs).toISOString().slice(0, 10);
   for (let i = 0; i < args.count; i += 1) {
-    const token = issueRegisterToken(ttlMs);
+    const token = issueRegisterToken(ttlMs, options);
     console.log(buildJoinUrl(args.base, token));
   }
 
+  const roleNote = args.role ? `, locked to ${args.role}` : "";
   console.error(
-    `\n✓ Generated ${args.count} invite link${args.count === 1 ? "" : "s"}, valid for ${args.days} day${args.days === 1 ? "" : "s"}.`,
+    `\n✓ Generated ${args.count} invite link${args.count === 1 ? "" : "s"}, valid for ${args.days} day${args.days === 1 ? "" : "s"} (until ${expiresAt})${roleNote}.`,
   );
 }
 

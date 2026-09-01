@@ -393,13 +393,21 @@ function verifyClaimToken(token) {
  */
 
 const REGISTER_TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
+const INVITE_LOCKABLE_ROLES = new Set(["Fellow", "Grantee", "Prize Winner", "Nodee"]);
 
-function issueRegisterToken(ttlMs = REGISTER_TTL_MS) {
+function issueRegisterToken(ttlMs = REGISTER_TTL_MS, options = {}) {
   const payload = {
     purpose: "register",
     iat: Date.now(),
     exp: new Date(Date.now() + ttlMs).toISOString(),
   };
+  const roleType = String(options.roleType || "").trim();
+  if (roleType) {
+    if (!INVITE_LOCKABLE_ROLES.has(roleType)) {
+      throw new Error(`Invite links cannot lock role "${roleType}".`);
+    }
+    payload.roleType = roleType;
+  }
   const encodedPayload = base64UrlEncode(JSON.stringify(payload));
   return `${encodedPayload}.${getSessionSignature(encodedPayload)}`;
 }
@@ -437,6 +445,22 @@ function verifyRegisterToken(token) {
     throw unauthorized("This invite link has expired. Ask for a fresh one.");
   }
   return payload;
+}
+
+/**
+ * Apply a role locked into the invite token (e.g. standing Nodee onboarding).
+ * Open invites with no roleType still let the person pick on the form.
+ */
+function personFromRegisterInvite(person, token) {
+  const payload = verifyRegisterToken(token);
+  const roleType = String(payload.roleType || "").trim();
+  if (!roleType) return person;
+  if (!INVITE_LOCKABLE_ROLES.has(roleType)) {
+    const err = new Error("This invite link is invalid.");
+    err.statusCode = 401;
+    throw err;
+  }
+  return { ...(person || {}), roleType, roleTypes: [roleType] };
 }
 
 /**
@@ -585,4 +609,5 @@ module.exports = {
   claimDirectoryProfile,
   issueRegisterToken,
   verifyRegisterToken,
+  personFromRegisterInvite,
 };

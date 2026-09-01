@@ -15,7 +15,7 @@ const {
   peekClaimToken,
   claimDirectoryProfile,
   changeDirectoryPassword,
-  verifyRegisterToken,
+  personFromRegisterInvite,
   readDirectoryTokenFromRequest,
 } = require("../server/directory-auth");
 
@@ -132,8 +132,8 @@ async function handleRegister(req, res) {
   }
   try {
     const { person, password, inviteToken } = req.body || {};
-    verifyRegisterToken(inviteToken);
-    const result = await createProfile(person, password);
+    const gated = personFromRegisterInvite(person, inviteToken);
+    const result = await createProfile(gated, password);
     return res.status(200).json(result);
   } catch (error) {
     const statusCode =

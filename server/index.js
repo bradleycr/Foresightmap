@@ -25,7 +25,7 @@ const {
   verifyDirectorySessionToken,
   peekClaimToken,
   claimDirectoryProfile,
-  verifyRegisterToken,
+  personFromRegisterInvite,
 } = require("./directory-auth");
 const calendarEventsHandler = require("../api/calendar-events");
 
@@ -211,8 +211,9 @@ app.post("/api/member-register", async (req, res) => {
   try {
     const { person, password, inviteToken } = req.body || {};
     // Registration is invite-only — gated behind a signed register link.
-    verifyRegisterToken(inviteToken);
-    const result = await createProfile(person, password);
+    // Role-locked invites (e.g. Nodee onboarding) override whatever the form sent.
+    const gated = personFromRegisterInvite(person, inviteToken);
+    const result = await createProfile(gated, password);
     return res.json(result);
   } catch (error) {
     const status =

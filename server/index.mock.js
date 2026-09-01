@@ -41,7 +41,7 @@ const {
   getDirectorySessionFromRequest,
   verifyDirectorySessionToken,
   readDirectoryTokenFromRequest,
-  verifyRegisterToken,
+  personFromRegisterInvite,
 } = require("./directory-auth");
 const { assertPublicWriteSecret } = require("./public-write-secret");
 const pollsHandler = require("../api/polls");
@@ -222,8 +222,8 @@ app.post("/api/member-claim", async (req, res) => {
 app.post("/api/member-register", async (req, res) => {
   try {
     const { person, password, inviteToken } = req.body || {};
-    verifyRegisterToken(inviteToken);
-    const result = await createLocalProfile(person, password);
+    const gated = personFromRegisterInvite(person, inviteToken);
+    const result = await createLocalProfile(gated, password);
     return res.json(result);
   } catch (error) {
     const status =
