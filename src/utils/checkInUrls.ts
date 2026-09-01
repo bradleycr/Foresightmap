@@ -6,7 +6,7 @@ import type { NodeSlug } from "../types/events";
 import { buildFullPath } from "./router";
 
 /** Production host — used when generating shareable QR links outside the browser. */
-export const ATLAS_PRODUCTION_ORIGIN = "https://foresightatlas.vercel.app";
+export const ATLAS_PRODUCTION_ORIGIN = "https://atlas.foresight.org";
 
 /** Path for tap-to-check-in landing page (what QR codes encode). */
 export function getCheckInPath(nodeSlug: Exclude<NodeSlug, "global">): string {

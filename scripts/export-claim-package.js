@@ -8,7 +8,7 @@
  *   claim-links-foresight-team.csv  — Foresight Team only
  *   missing-emails.csv              — everyone still missing roster email
  *
- *   CLAIM_BASE_URL=https://foresightatlas.vercel.app node scripts/export-claim-package.js
+ *   CLAIM_BASE_URL=https://atlas.foresight.org node scripts/export-claim-package.js
  */
 
 require("dotenv").config({ path: ".env.local", quiet: true });
@@ -20,7 +20,7 @@ const { loadRealDataRecords } = require("../server/realdata-store");
 const { issueClaimToken } = require("../server/directory-auth");
 
 const ROOT = path.resolve(__dirname, "..");
-const BASE = (process.env.CLAIM_BASE_URL || "https://foresightatlas.vercel.app").replace(
+const BASE = (process.env.CLAIM_BASE_URL || "https://atlas.foresight.org").replace(
   /\/+$/,
   "",
 );

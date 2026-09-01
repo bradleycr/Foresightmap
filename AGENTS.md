@@ -37,7 +37,7 @@
 - **Mock strategy (important).** Follow existing config-driven backend injection: `pnpm dev` selects `server/index.js` (sheet-backed) vs `server/index.mock.js` (file-backed) based on credentials in `scripts/start-dev.js`. Frontend services should stay API-first and should not add separate frontend-only mock toggles for core data flows.
 - **Google Sheets.** Source of truth for people and directory auth. See `docs/SHEETS_SYNC.md`.
   - **Runtime:** GET `/api/database` and directory login read from the sheet. No static database.json.
-  - **Events:** Programming events (including Berlin coworking Wednesdays) live on the **Events** tab. Edit events directly in the sheet; no scripts needed. See `docs/LUMA_INTEGRATION.md`.
+  - **Events:** Programming events (including Berlin coworking Thursdays) live on the **Events** tab. Edit events directly in the sheet; no scripts needed. See `docs/LUMA_INTEGRATION.md`.
   - `pnpm sync:sheet` — Sheet → `public/data/database.json` (optional backup/export; needs `GOOGLE_SHEETS_API_KEY`).
   - `pnpm migrate:sheet` — `database.json` → Sheet (one-time populate; needs `GOOGLE_SERVICE_ACCOUNT_KEY` or `GOOGLE_APPLICATION_CREDENTIALS`).
 - **Deploy.** **Vercel** is the primary deploy target (push to `main` → Vercel builds and deploys). Ensure sheet credentials are set in Vercel env so the serverless API can read the sheet.

@@ -91,20 +91,4 @@ Set these on any production host that runs member login / profile routes (Vercel
 
 ## Docker / self-hosted
 
-The repo includes a **Dockerfile** for self-hosted deployment. The app does **not** use `database.json` at runtime; it always talks to the Google Sheet.
-
-**Build and run:**
-
-```bash
-docker build -t foresightatlas .
-docker run --env-file .env.local -p 3001:3001 foresightatlas
-```
-
-**Required env at runtime** (pass via `--env-file` or `-e`):
-
-- **SPREADSHEET_ID** — your sheet ID (or rely on default in code).
-- **GOOGLE_SERVICE_ACCOUNT_KEY** — full JSON key (for read + write: map load, profile updates, RSVPs). Or **GOOGLE_SHEETS_API_KEY** for read-only (map loads; profile save will fail).
-
-Optional: **LUMA_API_KEY** (for events merge), **SIGNAL_*** (for check-in poller). See `docs/SIGNAL_CHECKIN_SETUP.md` if you use Signal.
-
-The container serves the API on port 3001. Put a reverse proxy (e.g. nginx, Caddy) in front for HTTPS and to serve the built frontend from `dist` (or host the SPA separately and point it at the API).
+Same env names as above. Runbook: [SELF_HOSTING.md](SELF_HOSTING.md) and [LOCAL_SETUP.md](LOCAL_SETUP.md).

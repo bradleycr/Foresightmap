@@ -128,7 +128,6 @@
         "sync:team": "node scripts/add-foresight-team.js --apply",
         "invite:link": "node scripts/generate-invite-link.js",
         "reset:link": "node scripts/generate-reset-link.js",
-        "add:aurelien": "node scripts/add-aurelien-nicolas.js",
         "sync:roster": "node scripts/sync-fellows-roster.js",
         "sync:roster:apply": "node scripts/sync-fellows-roster.js --apply",
         "vercel": "vercel",

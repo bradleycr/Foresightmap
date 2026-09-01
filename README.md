@@ -8,7 +8,7 @@
 |-------|-------|--------|
 | This repository (UI + API) | **Public** | Fork, run mock mode, open PRs |
 | Production roster / auth sheet | **Private** | Never committed; credentials via env only |
-| Live demo | [foresightatlas.vercel.app](https://foresightatlas.vercel.app) | Invitation / claim-link gated |
+| Live site | [atlas.foresight.org](https://atlas.foresight.org) | Invitation / claim-link gated |
 
 New here? **[CONTRIBUTING.md](CONTRIBUTING.md)** · **[docs/README.md](docs/README.md)** · **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)** · Security: **[.github/SECURITY.md](.github/SECURITY.md)**
 
@@ -47,9 +47,8 @@ pnpm build      # required before opening a PR
 
 | Path | Doc |
 |------|-----|
-| **Vercel** (current production) | [docs/VERCEL_ENV.md](docs/VERCEL_ENV.md), [docs/VERCEL_PRODUCTION.md](docs/VERCEL_PRODUCTION.md) |
+| **Vercel** (current production) | [docs/VERCEL_ENV.md](docs/VERCEL_ENV.md), [docs/VERCEL_CLI.md](docs/VERCEL_CLI.md) |
 | **On-prem / node host** (target) | [docs/SELF_HOSTING.md](docs/SELF_HOSTING.md) |
-| GitHub Pages (dormant, manual) | [DEPLOYMENT.md](DEPLOYMENT.md) |
 
 Set **SPREADSHEET_ID**, **GOOGLE_SERVICE_ACCOUNT_KEY**, and **DIRECTORY_SESSION_SECRET** on the host. Keep the sheet **private** (share with the service account as Editor — not “anyone with the link” unless you intentionally accept that tradeoff).
 

@@ -10,8 +10,8 @@
  *   node scripts/generate-claim-links.js [--base <url>] [--unclaimed-only] [--role <roleType>] [--csv]
  *
  * Examples:
- *   CLAIM_BASE_URL=https://map.foresight.org node scripts/generate-claim-links.js
- *   node scripts/generate-claim-links.js --base https://map.foresight.org --unclaimed-only
+ *   CLAIM_BASE_URL=https://atlas.foresight.org node scripts/generate-claim-links.js
+ *   node scripts/generate-claim-links.js --base https://atlas.foresight.org --unclaimed-only
  *   node scripts/generate-claim-links.js --csv > claim-links.csv
  *
  * Env vars (loaded from .env.local / .env):

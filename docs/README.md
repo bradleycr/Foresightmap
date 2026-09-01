@@ -24,9 +24,10 @@ Supplements the root **[README.md](../README.md)** and **[CONTRIBUTING.md](../CO
 
 | Doc | Purpose |
 |-----|---------|
-| [VERCEL_ENV.md](VERCEL_ENV.md) | Env vars on Vercel |
-| [VERCEL_PRODUCTION.md](VERCEL_PRODUCTION.md) | Production / service account notes |
+| [VERCEL_ENV.md](VERCEL_ENV.md) | Env vars, service account, production checklist |
 | [VERCEL_CLI.md](VERCEL_CLI.md) | Vercel CLI helpers |
+
+Production is **https://atlas.foresight.org** (Vercel). A GitHub Pages workflow still exists but is dormant (`workflow_dispatch` only).
 
 ## Quality & ops
 
