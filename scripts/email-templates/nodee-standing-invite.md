@@ -41,13 +41,10 @@ profile. Use this link (it is for Nodees only):
 {{Join link}}
 
 What to do:
-1. Open the link and fill in your name, city, and a short project line.
-2. Role is already set to Nodee — you don't need to change it.
-3. Set Primary node to Berlin Node or Bay Area Node if that's where you're
-   based (use Global if you're not tied to either).
-4. Choose a password (at least 8 characters), then submit.
-5. Add a photo and links whenever you like — you can edit your profile any
-   time after you sign in.
+1. Open the link. Role is already set to Nodee.
+2. Enter your name and choose a password (at least 8 characters).
+3. After you join, add your city so you appear on the map. You can fill
+   in the rest of your profile any time.
 
 Once you're in, you can:
 - Find yourself (and everyone else) on the map
@@ -81,7 +78,7 @@ for grantees, fellows, and Nodees, with programming, RSVPs, and check-ins.
 Create your Nodee profile here:
 {{Join link}}
 
-Pick Berlin Node or Bay Area Node as your primary node, set a password,
+Pick Berlin Node or Bay Area Node on your profile, set a password,
 and add your city so you show up on the map. You can edit everything later.
 
 Questions? Reply to this email.

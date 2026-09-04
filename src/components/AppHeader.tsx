@@ -53,7 +53,6 @@ export function AppHeader({
 
   const isMapRoute = route === "/";
   const isProgrammingRoute = route === "/berlin" || route === "/sf" || route === "/global";
-  const isProfileRoute = route === "/profile";
   /*
    * Connections is no longer a top-level destination in the header — the profile
    * dialog surfaces it instead. The route itself is still live and reachable
@@ -370,11 +369,6 @@ export function AppHeader({
                     <h2 className="mt-4 text-xl font-semibold tracking-tight text-gray-900">
                       {identity.fullName}
                     </h2>
-                    <p className="mt-2 text-sm leading-6 text-gray-600">
-                      {isProfileRoute
-                        ? "Your directory profile is open."
-                        : "Manage your profile or sign out from this device."}
-                    </p>
                   </div>
 
                   <div className="mt-6 space-y-3">
@@ -440,7 +434,6 @@ export function AppHeader({
                   <DirectoryLoginForm
                     people={people}
                     title="Sign in to your profile"
-                    description="Use your full name and password."
                     submitLabel="Sign in"
                     initialName={getLastSignedInName()}
                     onCancel={closeAccountDialog}
@@ -612,9 +605,6 @@ export function AppHeader({
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">
                         {identity.fullName}
-                      </p>
-                      <p className="text-xs text-sky-600">
-                        {isProfileRoute ? "Editing your directory profile" : "Signed in"}
                       </p>
                     </div>
                   </div>

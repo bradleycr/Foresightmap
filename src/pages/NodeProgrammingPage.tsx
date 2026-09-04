@@ -406,23 +406,17 @@ export function NodeProgrammingPage({
                 Back to map
               </button>
             </div>
-            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight mb-1 sm:mb-1.5">
+            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">
               {node.city} Programming
             </h1>
-            <p className="text-sm text-gray-600 max-w-lg leading-relaxed">
-              {node.description}
-            </p>
           </div>
         </header>
       ) : (
         <div className="border-b border-gray-200 flex-shrink-0" style={headerStyle}>
           <div className={cn(pageShellClassName, "py-4 sm:py-5")}>
-            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight mb-1 sm:mb-1.5">
+            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">
               {node.city} Programming
             </h1>
-            <p className="text-sm text-gray-600 max-w-lg leading-relaxed">
-              {node.description}
-            </p>
           </div>
         </div>
       )}
@@ -679,11 +673,6 @@ function DirectoryStatusBanner({
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-gray-900 sm:text-base">
               {identity.fullName}
-            </p>
-            <p className="mt-1 text-xs text-gray-500">
-              {mode === "table"
-                ? "Signed in for check-ins. Use Profile (top right) to manage your account."
-                : "Signed in for RSVPs. Use Profile (top right) to manage your account."}
             </p>
           </div>
           <ShieldCheck className={cn("hidden size-5 shrink-0 sm:block", theme.avatarActiveText)} />

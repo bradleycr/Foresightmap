@@ -38,17 +38,11 @@ Use this standing invite (keep it in this onboarding doc):
 
 {{Join link}}
 
-If you might already be on the Atlas (we often add people from the website):
-1. Choose "I'm already listed"
-2. Search your name
-3. Enter the email we have on file for you
-4. Set a password
+Search for your name first — especially if you're an alum; we may already
+have you. Confirm with the email on file, then set a password.
 
-If you're new:
-1. Choose "I'm new"
-2. Pick Fellow, Grantee, Nodee, or Prize Winner
-3. Add your city so you appear on the map
-4. Set a password
+If you don't find yourself, set up a new profile (name, role, password).
+You can add city and the rest after you join.
 
 If we don't have an email on your row, or the name search misses you, reply
 to this email and we'll send a personal claim link.

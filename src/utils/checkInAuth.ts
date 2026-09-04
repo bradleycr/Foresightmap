@@ -36,9 +36,7 @@ export function parseCheckInNodeSlug(route: string): NodeSlug | null {
 export interface CheckInAuthCopy {
   nodeLabel: string;
   heroTitle: string;
-  heroSubtitle: string;
   formTitle: string;
-  formDescription: string;
   submitLabel: string;
 }
 
@@ -53,11 +51,7 @@ export function getCheckInAuthCopy(route: string): CheckInAuthCopy | null {
   return {
     nodeLabel,
     heroTitle: `Check in at ${nodeLabel}`,
-    heroSubtitle:
-      "Sign in with the name and password from your claim link. You'll come right back here to mark yourself at the node today.",
-    formTitle: "Sign in to check in",
-    formDescription:
-      "Use your full directory name and password. First time on this phone? Sign in once — we'll remember you for next time.",
+    formTitle: "Welcome back",
     submitLabel: "Sign in & check in",
   };
 }

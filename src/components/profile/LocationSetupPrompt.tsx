@@ -62,19 +62,12 @@ export function LocationSetupPrompt({
             <MapPin className="size-6" aria-hidden />
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-600">
-              One quick step
-            </p>
             <h2
               id="location-setup-title"
-              className="mt-1 text-xl font-semibold tracking-tight text-gray-900 sm:text-2xl"
+              className="text-xl font-semibold tracking-tight text-gray-900 sm:text-2xl"
             >
               {firstName ? `${firstName}, where are you based?` : "Where are you based?"}
             </h2>
-            <p className="mt-2 text-sm leading-relaxed text-gray-600">
-              The Foresight Atlas is a map of our community. Add your city so
-              fellows and grantees can find you — one pin per person.
-            </p>
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { ArrowLeft, Loader2, Search, Sparkles, UserPlus, Users } from "lucide-react";
+import { ArrowLeft, Loader2, Search, Sparkles, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import type { Person } from "../types";
 import type { Identity } from "../services/identity";
@@ -79,7 +79,7 @@ export function JoinPage({
         person={null}
         createMode
         inviteToken={inviteToken}
-        backLabel="Back to options"
+        backLabel="Back to search"
         onNavigateHome={() => setPath("choose")}
         onSignIn={onSignIn}
         onSignOut={onSignOut}
@@ -129,23 +129,18 @@ export function JoinPage({
           <h1 className="mt-4 text-2xl font-semibold tracking-tight text-gray-900">
             Join The Foresight Atlas
           </h1>
-          <p className="mt-2 max-w-xl text-sm leading-6 text-gray-500">
-            One invite for the community. If you&apos;re already on the roster,
-            claim that profile. If not, create a new one as a Fellow, Grantee,
-            Nodee, or Prize Winner.
-          </p>
         </div>
         <div className="grid gap-3 p-6 sm:grid-cols-2 sm:p-8">
           <PathCard
-            icon={<Users className="size-5 text-sky-600" />}
-            title="I'm already listed"
-            description="Search your name, then confirm with the email we have on file and set a password."
+            icon={<Search className="size-5 text-sky-600" />}
+            title="Search for your name"
+            description="Start here if you're an alum — we may already have you."
             onClick={() => setPath("existing")}
           />
           <PathCard
             icon={<UserPlus className="size-5 text-emerald-600" />}
-            title="I'm new"
-            description="Create a profile. You'll show up on the map after you add a city."
+            title="Set up a new profile"
+            description="If you don't find yourself in the directory."
             onClick={() => setPath("new")}
           />
         </div>
@@ -297,11 +292,17 @@ function ExistingClaimForm({
             <Sparkles className="size-7 text-sky-500" aria-hidden />
           </div>
           <h1 className="mt-4 text-2xl font-semibold tracking-tight text-gray-900">
-            Claim your existing profile
+            Search for your name
           </h1>
-          <p className="mt-2 max-w-xl text-sm leading-6 text-gray-500">
-            Find your name, then type the email already on your Atlas row.
-            We never show that email here.
+          <p className="mt-2 text-sm leading-6 text-gray-600">
+            Especially if you&apos;re an alum. If you don&apos;t find yourself,{" "}
+            <button
+              type="button"
+              className="font-medium text-sky-600 hover:text-sky-800"
+              onClick={onCreateInstead}
+            >
+              set up a new profile
+            </button>.
           </p>
         </div>
 
@@ -350,14 +351,14 @@ function ExistingClaimForm({
               )}
               {query.trim().length > 1 && suggestions.length === 0 && (
                 <p className="text-sm text-gray-600">
-                  No public directory match. If your profile is private, continue
-                  with the exact name, or{" "}
+                  No public match. If your profile is private, continue with the
+                  exact name, or{" "}
                   <button
                     type="button"
                     className="font-medium text-sky-600 hover:text-sky-800"
                     onClick={onCreateInstead}
                   >
-                    create a new profile
+                    set up a new profile
                   </button>
                   .
                 </p>
@@ -390,7 +391,7 @@ function ExistingClaimForm({
             <StatusNote>
               We couldn&apos;t find that name.{" "}
               <button type="button" className="font-medium text-sky-700" onClick={onCreateInstead}>
-                Create a new profile
+                Set up a new profile
               </button>
               .
             </StatusNote>
@@ -525,7 +526,7 @@ function PathCard({
 }: {
   icon: ReactNode;
   title: string;
-  description: string;
+  description?: string;
   onClick: () => void;
 }) {
   return (
@@ -538,7 +539,9 @@ function PathCard({
         {icon}
       </span>
       <span className="mt-3 text-base font-semibold text-gray-900">{title}</span>
-      <span className="mt-1 text-sm leading-6 text-gray-500">{description}</span>
+      {description ? (
+        <span className="mt-1 text-sm leading-6 text-gray-500">{description}</span>
+      ) : null}
     </button>
   );
 }

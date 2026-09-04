@@ -128,13 +128,13 @@ export function ConnectionsPage({
               <h1 className="text-lg md:text-xl font-heading font-semibold text-gray-900 truncate">
                 Connections
               </h1>
-              <p className="text-sm text-gray-600 truncate">
-                {connectionIds.length === 0
-                  ? "People you bookmark appear here"
-                  : unresolvedIds.length > 0
+              {connectionIds.length > 0 ? (
+                <p className="text-sm text-gray-600 truncate">
+                  {unresolvedIds.length > 0
                     ? `${connectedPeople.length} visible · ${unresolvedIds.length} unavailable`
                     : `${connectedPeople.length} saved`}
-              </p>
+                </p>
+              ) : null}
             </div>
           </div>
         </div>

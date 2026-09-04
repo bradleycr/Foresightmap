@@ -14,7 +14,7 @@ import { ATLAS_ACCESS_MAILTO, atlasPasswordResetMailto } from "../../utils/check
 interface DirectoryLoginFormProps {
   people: Person[];
   title: string;
-  description: string;
+  description?: string;
   submitLabel?: string;
   onSubmit: (
     username: string,
@@ -28,7 +28,7 @@ interface DirectoryLoginFormProps {
    * heuristics or they're signing in on a friend's freshly-cleared device.
    */
   initialName?: string | null;
-  /** Show a visible forgot-password line (AuthGate uses the page footer too). */
+  /** Show a visible forgot-password line. */
   showAccountRecovery?: boolean;
 }
 
@@ -130,7 +130,9 @@ export function DirectoryLoginForm({
         <h2 className="text-xl font-semibold tracking-tight text-gray-900">
           {title}
         </h2>
-        <p className="text-sm leading-6 text-gray-600">{description}</p>
+        {description ? (
+          <p className="text-sm leading-6 text-gray-600">{description}</p>
+        ) : null}
       </div>
 
       <div className="space-y-4">

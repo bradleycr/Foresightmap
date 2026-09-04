@@ -45,10 +45,6 @@ export function OpenToMeetPanel({
           <h2 id="open-to-meet-heading" className="text-lg font-semibold text-gray-900">
             Open to meet
           </h2>
-          <p className="mt-1 text-sm leading-relaxed text-gray-600">
-            Members who added a booking link on their profile — coffee, a call, or a quick
-            intro. Opt-in only; no one sees your calendar unless you share a link.
-          </p>
         </div>
       </div>
 

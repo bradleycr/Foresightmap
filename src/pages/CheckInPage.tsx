@@ -201,20 +201,11 @@ export function CheckInPage({
           <h1 className="mt-6 text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">
             Sign in to check in
           </h1>
-          <p className="mt-3 max-w-md text-sm leading-relaxed text-gray-600">
-            Welcome to the <strong>{locationLabel} Node</strong>. Sign in to your
-            directory profile to mark yourself here today and earn a nanowheel.
-          </p>
           <div className="mt-6">
             <Button size="lg" className="w-full sm:w-auto" onClick={onOpenProfile}>
               Open profile sign-in
             </Button>
           </div>
-          <p className="mt-6 text-xs leading-relaxed text-gray-500">
-            Don&apos;t have a profile yet? Use the &quot;Add yourself&quot; option on
-            the profile page — it takes a minute and unlocks check-ins for every
-            future visit.
-          </p>
         </div>
       </div>
     );
@@ -259,11 +250,6 @@ export function CheckInPage({
                 ? `Checking you in at the ${locationLabel} Node`
                 : `Check in at the ${locationLabel} Node`}
           </h1>
-          <p className="mt-3 max-w-lg text-sm leading-relaxed text-gray-600">
-            {alreadyHere
-              ? "Your check-in is logged. Thanks for being here today — enjoy the space."
-              : "One tap confirms you're here today. That earns you a nanowheel and adds you to the list of people at the node right now."}
-          </p>
         </div>
 
         <div className="mt-8">

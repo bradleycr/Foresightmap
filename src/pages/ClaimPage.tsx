@@ -249,22 +249,13 @@ export function ClaimPage({
                   ? `Reset your password, ${firstName(peek.fullName)}`
                   : `Set up ${firstName(peek.fullName)}'s profile`}
               </h1>
-              <p className="mt-3 text-sm leading-relaxed text-gray-600">
-                {peek.mode === "reset" ? (
-                  <>
-                    Choose a new password for{" "}
-                    <span className="font-medium text-gray-900">{peek.fullName}</span>{" "}
-                    and you&apos;ll be signed back in. This link works once and
-                    expires after 24 hours.
-                  </>
-                ) : (
-                  <>
-                    You&apos;re claiming the profile for{" "}
-                    <span className="font-medium text-gray-900">{peek.fullName}</span>.
-                    Choose a password and you&apos;ll be signed in.
-                  </>
-                )}
-              </p>
+              {peek.mode === "reset" ? (
+                <p className="mt-3 text-sm leading-relaxed text-gray-600">
+                  Choose a new password for{" "}
+                  <span className="font-medium text-gray-900">{peek.fullName}</span>
+                  . This link works once and expires after 24 hours.
+                </p>
+              ) : null}
             </div>
 
             {peek.mode === "claim" && peek.needsEmail && (

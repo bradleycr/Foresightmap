@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { ArrowLeft, KeyRound, Loader2, Link2, LogOut, Save, Sparkles, User, UserPlus, CheckCircle, AlertCircle, CalendarDays, EyeOff, Users } from "lucide-react";
+import { ArrowLeft, KeyRound, Loader2, Link2, LogOut, Save, Sparkles, User, CheckCircle, AlertCircle, CalendarDays, EyeOff, Users } from "lucide-react";
 import { toast } from "sonner";
 import type { Identity } from "../services/identity";
 import { createPerson, updatePerson } from "../services/database";
@@ -176,11 +176,7 @@ export function ProfilePage({
   });
   /** For create mode: password and confirm. */
   const [createPassword, setCreatePassword] = useState({ password: "", confirm: "" });
-  /** Selected preset focus areas (used for map filtering). */
-  const [createSelectedPresets, setCreateSelectedPresets] = useState<string[]>([]);
-  /** Custom focus tags (profile-only; comma-separated). */
-  const [createCustomFocusStr, setCreateCustomFocusStr] = useState("");
-  /** Same for edit form. */
+  /** Edit-form focus areas (used for map filtering). */
   const [editSelectedPresets, setEditSelectedPresets] = useState<string[]>([]);
   const [editCustomFocusStr, setEditCustomFocusStr] = useState("");
   /** Live geocode feedback so people can fix city/country before saving. */
@@ -246,18 +242,6 @@ export function ProfilePage({
       );
     }
   }, [createMode, identity, draft, inviteLockedRole]);
-
-  /** Sync create-form focus from draft when entering create mode or draft tags change. */
-  useEffect(() => {
-    if (createMode && !identity && draft) {
-      setCreateSelectedPresets(getPresetFocusTags(draft.focusTags));
-      setCreateCustomFocusStr(
-        CUSTOM_FOCUS_AREAS_ENABLED
-          ? formatCustomFocusTags(getCustomFocusTags(draft.focusTags))
-          : "",
-      );
-    }
-  }, [createMode, identity, draft?.focusTags]);
 
   /** Sync edit-form focus from draft when in edit mode. */
   useEffect(() => {
@@ -445,7 +429,6 @@ export function ProfilePage({
             affiliationOrInstitution: normalizeAffiliationInput(
               createDraft.affiliationOrInstitution,
             ),
-            focusTags: mergeFocusTags(createSelectedPresets, createCustomFocusStr),
           };
           const result = await createPerson(payload, createPassword.password, inviteToken);
           onProfileSaved(result.person, result.auth);
@@ -498,20 +481,13 @@ export function ProfilePage({
               <h1 className="mt-4 text-2xl font-semibold tracking-tight text-gray-900">
                 {inviteLockedRole === "Nodee"
                   ? "Join the Atlas as a Nodee"
-                  : "Add yourself to the directory"}
+                  : "Set up your profile"}
               </h1>
-              <p className="mt-2 max-w-xl text-sm leading-6 text-gray-500">
-                {inviteLockedRole === "Nodee"
-                  ? "Welcome. Create your Nodee profile below — you'll show up on the map and in the directory. Pick Berlin or San Francisco as your primary node if that's where you're based."
-                  : "Not in the list? Add your details below; you'll appear on the map and in the directory."}
-              </p>
             </div>
 
             <div className="space-y-8 px-6 py-8 sm:px-8">
-
               <ProfileSection
-                title="Core profile"
-                description="Required for the directory and map."
+                title="Who you are"
                 icon={<User className="size-4 text-sky-500" />}
               >
                 <div className="grid gap-4 md:grid-cols-2">
@@ -525,11 +501,7 @@ export function ProfilePage({
                   <Field
                     label="Role type"
                     required
-                    description={
-                      inviteLockedRole
-                        ? "Set by your invite link."
-                        : "Pick the role that best describes you."
-                    }
+                    description={inviteLockedRole ? "Set by your invite link." : undefined}
                   >
                     <RoleTypeSelect
                       value={inviteLockedRole || createDraft.roleType}
@@ -538,201 +510,11 @@ export function ProfilePage({
                       options={JOIN_ROLE_TYPE_OPTIONS}
                     />
                   </Field>
-                  <Field label="Cohort year" required>
-                    <Select
-                      value={String(createDraft.fellowshipCohortYear)}
-                      onValueChange={(v) =>
-                        updateCreateDraft("fellowshipCohortYear", v === "0" ? 0 : Number(v))
-                      }
-                    >
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="0">Unknown</SelectItem>
-                        {COHORT_YEAR_OPTIONS.filter((y) => y !== 0).map((y) => (
-                          <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                  <Field label="Primary node (location)" required>
-                    <Select
-                      value={createDraft.primaryNode === "Alumni" ? "Global" : createDraft.primaryNode}
-                      onValueChange={(v: PrimaryNode) => updateCreateDraft("primaryNode", v)}
-                    >
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {LOCATION_NODE_OPTIONS.map((opt) => (
-                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                  <Field label="Program status">
-                    <Select
-                      value={createDraft.isAlumni ? "Alumni" : "Current"}
-                      onValueChange={(v) =>
-                        updateCreateDraft("isAlumni", v === "Alumni")
-                      }
-                    >
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Current">Current participant</SelectItem>
-                        <SelectItem value="Alumni">Alumni</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                  <Field label="Affiliation / institution">
-                    <Input
-                      value={createDraft.affiliationOrInstitution ?? ""}
-                      onChange={(e) =>
-                        updateCreateDraft("affiliationOrInstitution", e.target.value || null)
-                      }
-                      placeholder="University, company, lab"
-                    />
-                  </Field>
-                  <Field
-                    label="City"
-                    description="Use one city only, not multiple places."
-                  >
-                    <Input
-                      value={createDraft.currentCity}
-                      onChange={(e) => updateCreateDraft("currentCity", e.target.value)}
-                      placeholder="e.g. Berlin"
-                    />
-                  </Field>
-                  <Field
-                    label="Country"
-                    description="Add the country so we can place the pin reliably."
-                  >
-                    <Input
-                      value={createDraft.currentCountry}
-                      onChange={(e) => updateCreateDraft("currentCountry", e.target.value)}
-                      placeholder="e.g. Germany"
-                    />
-                  </Field>
-                </div>
-                <FieldCheckNotice state={locationCheck} />
-                <Field
-                  label="Focus areas"
-                  description="Select one or more of the six main focus areas (used for map filtering)."
-                >
-                  <div className="space-y-3">
-                    <div className="flex flex-wrap gap-x-4 gap-y-2 sm:gap-y-3">
-                      {PRESET_FOCUS_AREAS.map((tag) => (
-                        <label
-                          key={tag}
-                          className="flex min-h-[44px] touch-manipulation cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:border-gray-300 hover:bg-gray-50 has-[:checked]:border-sky-400 has-[:checked]:bg-sky-50 has-[:checked]:text-sky-800 sm:min-h-0"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={createSelectedPresets.includes(tag)}
-                            onChange={() =>
-                              setCreateSelectedPresets((prev) =>
-                                prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-                              )
-                            }
-                            className="size-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500"
-                          />
-                          <span>{tag}</span>
-                        </label>
-                      ))}
-                    </div>
-                    <CustomFocusInput
-                      id="create-custom-focus"
-                      value={createCustomFocusStr}
-                      onChange={setCreateCustomFocusStr}
-                    />
-                  </div>
-                </Field>
-              </ProfileSection>
-
-              <ProfileSection
-                title="Optional"
-                description="Tagline, details, and links."
-                icon={<Sparkles className="size-4 text-sky-500" />}
-              >
-                <Field label="Short tagline">
-                  <Input
-                    value={createDraft.shortProjectTagline}
-                    onChange={(e) => updateCreateDraft("shortProjectTagline", e.target.value)}
-                    placeholder="One sentence about your work"
-                  />
-                </Field>
-                <Field label="Profile URL">
-                  <Input
-                    type="url"
-                    value={createDraft.profileUrl}
-                    onChange={(e) => updateCreateDraft("profileUrl", e.target.value)}
-                    placeholder="https://..."
-                  />
-                </Field>
-              </ProfileSection>
-
-              <ProfileSection
-                title="How to contact you"
-                description="How would you like others to reach you? Email, URL, or LinkedIn profile."
-                icon={<Link2 className="size-4 text-sky-500" />}
-              >
-                <Field
-                  label="Preferred contact (email, URL, or LinkedIn)"
-                  description="Separate multiple with commas — each becomes its own contact button on your profile."
-                >
-                  <Input
-                    value={createDraft.contactUrlOrHandle ?? ""}
-                    onChange={(e) =>
-                      updateCreateDraft(
-                        "contactUrlOrHandle",
-                        e.target.value.trim() || null,
-                      )
-                    }
-                    placeholder="you@example.com, https://linkedin.com/in/you"
-                  />
-                </Field>
-              </ProfileSection>
-
-              <ProfileSection
-                title="Open to meet & calendar"
-                description="Opt in to member meetups. Your booking link is public to signed-in members; calendar email is for invites only."
-                icon={<CalendarDays className="size-4 text-sky-500" />}
-              >
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Calendar invite email">
-                    <Input
-                      value={createDraft.calendarEmail ?? ""}
-                      onChange={(e) =>
-                        updateCreateDraft("calendarEmail", e.target.value.trim() || null)
-                      }
-                      placeholder="name@gmail.com"
-                      inputMode="email"
-                      autoCapitalize="none"
-                      autoCorrect="off"
-                    />
-                    <p className="mt-2 text-xs text-gray-500">
-                      Others can use this to add you as a guest on a Google Calendar event.
-                    </p>
-                  </Field>
-                  <Field label="Open to meet link">
-                    <Input
-                      value={createDraft.availabilityUrl ?? ""}
-                      onChange={(e) =>
-                        updateCreateDraft("availabilityUrl", e.target.value.trim() || null)
-                      }
-                      placeholder="https://calendly.com/…"
-                      inputMode="url"
-                      autoCapitalize="none"
-                      autoCorrect="off"
-                    />
-                    <p className="mt-2 text-xs text-gray-500">
-                      Calendly, Google appointment schedule, etc. Appears on the community Calendar
-                      page when set.
-                    </p>
-                  </Field>
                 </div>
               </ProfileSection>
 
               <ProfileSection
-                title="Set your password"
-                description="You'll use this to sign in and edit your profile later."
+                title="Password"
                 icon={<KeyRound className="size-4 text-sky-500" />}
               >
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -812,7 +594,6 @@ export function ProfilePage({
               <DirectoryLoginForm
                 people={people}
                 title="Sign in to edit your directory profile"
-                description="Use your full name and password."
                 submitLabel="Sign in"
                 initialName={getLastSignedInName()}
                 onSubmit={onSignIn}
@@ -1049,15 +830,9 @@ export function ProfilePage({
                   textClassName="text-sm sm:text-base"
                 />
                 <div className="min-w-0">
-                  <p className="text-xs font-medium uppercase tracking-wider text-sky-600/90 sm:text-sm">
-                    Your directory profile
-                  </p>
                   <h1 className="mt-1 text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">
                     {draft.fullName}
                   </h1>
-                  <p className="mt-2 max-w-xl text-sm leading-6 text-gray-500">
-                    Edit below; Save and Sign out are at the bottom.
-                  </p>
                   <FocusTagsDisplay
                     focusTags={editSelectedPresets}
                     className="mt-4"
@@ -1075,7 +850,6 @@ export function ProfilePage({
             <section className="space-y-8">
               <ProfileSection
                 title="Core profile"
-                description="Essentials for the list, modal, and filters."
                 icon={<User className="size-4 text-sky-500" />}
               >
                 <div className="grid gap-4 md:grid-cols-2">
@@ -1087,7 +861,7 @@ export function ProfilePage({
                     />
                   </Field>
 
-                  <Field label="Role type" required description="Pick the role that best describes you.">
+                  <Field label="Role type" required>
                     <RoleTypeSelect
                       value={draft.roleType}
                       onChange={(role) => updateDraft("roleType", role)}
@@ -1168,10 +942,7 @@ export function ProfilePage({
                   </Field>
                 </div>
 
-                <Field
-                  label="Focus areas"
-                  description="Select one or more of the six main focus areas (used for map filtering)."
-                >
+                <Field label="Focus areas">
                   <div className="space-y-3">
                     <div className="flex flex-wrap gap-x-4 gap-y-2 sm:gap-y-3">
                       {PRESET_FOCUS_AREAS.map((tag) => (
@@ -1206,7 +977,6 @@ export function ProfilePage({
               {identity?.personId && (
                 <ProfileSection
                   title="My events"
-                  description="Going RSVPs from programming pages. Upcoming events also appear on your map sidebar card; past events stay here for your record."
                   icon={<CalendarDays className="size-4 text-sky-500" />}
                 >
                   <ProfileEventsAttending
@@ -1218,7 +988,6 @@ export function ProfilePage({
 
               <ProfileSection
                 title="Details and public presence"
-                description="What people see when they open your card."
                 icon={<Sparkles className="size-4 text-sky-500" />}
               >
                 <Field label="Short tagline">
@@ -1233,7 +1002,7 @@ export function ProfilePage({
 
                 <Field
                   label="Profile photo URL (optional)"
-                  description="Paste a direct image link (https://…). Saved to the directory and shown on your map card. Clear the field to remove your photo."
+                  description="Direct https:// image link. Clear the field to remove."
                 >
                   <Input
                     value={draft.profileImageUrl ?? ""}
@@ -1273,7 +1042,7 @@ export function ProfilePage({
                 description={
                   showLocationSetup
                     ? "Same fields as above — save from the card or use Save profile below."
-                    : "Add a precise city and country so your map pin lands in the right place."
+                    : undefined
                 }
                 icon={<img src={foresightIconUrl} alt="" className="size-4 object-contain opacity-90" aria-hidden />}
               >
@@ -1306,17 +1075,9 @@ export function ProfilePage({
 
               <ProfileSection
                 title="Privacy"
-                description="Choose whether your profile appears on the public map and directory. You can change this any time."
                 icon={<EyeOff className="size-4 text-sky-500" />}
               >
-                <Field
-                  label="Profile visibility"
-                  description={
-                    draft.isPrivate
-                      ? "Your profile is hidden from the public atlas. You can still see and edit it here while signed in."
-                      : "Your profile is visible to everyone browsing the map and directory."
-                  }
-                >
+                <Field label="Profile visibility">
                   <Select
                     value={draft.isPrivate ? "private" : "public"}
                     onValueChange={(v) => updateDraft("isPrivate", v === "private")}
@@ -1335,7 +1096,7 @@ export function ProfilePage({
                 description={
                   identity.mustChangePassword
                     ? "Set a personal password before saving profile edits."
-                    : "Update your password whenever you want."
+                    : undefined
                 }
                 icon={<KeyRound className="size-4 text-sky-500" />}
               >
@@ -1422,7 +1183,6 @@ export function ProfilePage({
 
               <ProfileSection
                 title="Contact and links"
-                description="How would you like to be contacted? Email, URL, or LinkedIn."
                 icon={<Link2 className="size-4 text-sky-500" />}
               >
                 <Field
@@ -1461,7 +1221,6 @@ export function ProfilePage({
 
               <ProfileSection
                 title="Open to meet & calendar"
-                description="Opt in to member meetups. Your booking link is public to signed-in members; calendar email is for invites only."
                 icon={<CalendarDays className="size-4 text-sky-500" />}
               >
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -1559,7 +1318,7 @@ function ProfileSection({
   children,
 }: {
   title: string;
-  description: string;
+  description?: string;
   icon?: ReactNode;
   children: ReactNode;
 }) {
@@ -1575,7 +1334,9 @@ function ProfileSection({
           <h2 className="text-base font-semibold tracking-tight text-gray-900 sm:text-lg">
             {title}
           </h2>
-          <p className="mt-1 text-sm leading-5 text-gray-500">{description}</p>
+          {description ? (
+            <p className="mt-1 text-sm leading-5 text-gray-500">{description}</p>
+          ) : null}
         </div>
       </div>
       <div className="mt-5 space-y-4 sm:mt-6">{children}</div>
