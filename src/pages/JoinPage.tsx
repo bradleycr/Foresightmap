@@ -485,8 +485,8 @@ function ExistingClaimForm({
               {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : null}
               Set password and enter
             </Button>
-            <Button type="button" variant="outline" onClick={onBack} className="min-h-[44px]">
-              Cancel
+            <Button type="button" variant="outline" onClick={onCreateInstead} className="min-h-[44px]">
+              Set up a new profile
             </Button>
           </div>
         </div>
