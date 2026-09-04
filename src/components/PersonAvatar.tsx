@@ -25,6 +25,8 @@ interface PersonAvatarProps {
   className?: string;
   /** Tune initials size per spot (defaults suit a 40–48px avatar). */
   textClassName?: string;
+  /** Browser fetch hint. Table / lists should pass "lazy". */
+  loading?: "lazy" | "eager";
 }
 
 function initialsOf(name: string): string {
@@ -43,6 +45,7 @@ export function PersonAvatar({
   src,
   className,
   textClassName,
+  loading,
 }: PersonAvatarProps) {
   const [failed, setFailed] = useState(false);
 
@@ -60,6 +63,8 @@ export function PersonAvatar({
         alt=""
         className={cn("object-cover", className)}
         referrerPolicy="no-referrer"
+        decoding="async"
+        loading={loading}
         onError={() => setFailed(true)}
       />
     );

@@ -29,12 +29,10 @@ import {
 } from "../../services/checkin";
 import { toast } from "sonner";
 import { cn } from "../ui/utils";
+import { PersonAvatar } from "../PersonAvatar";
+import { getEffectiveProfileImageUrl } from "../../services/profileImageOverride";
 
 const MAX_HEADS = 15;
-
-function initials(name: string): string {
-  return name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
-}
 
 function formatDayLabel(dateStr: string): string {
   const d = new Date(dateStr + "T12:00:00");
@@ -227,6 +225,7 @@ export function NodeTableView({
               {dayPeople.map((c) => {
                 const person = personMap.get(c.personId);
                 const pal = avatarPalette(c.personId);
+                const displayName = person?.fullName ?? c.fullName;
                 return (
                   <button
                     key={c.personId}
@@ -236,15 +235,21 @@ export function NodeTableView({
                   >
                     <div
                       className={cn(
-                        "size-12 sm:size-14 rounded-full flex items-center justify-center text-sm font-bold transition-all ring-2 ring-offset-2 ring-offset-gray-50",
-                        pal.bg, pal.text, pal.ring,
+                        "size-12 sm:size-14 overflow-hidden rounded-full ring-2 ring-offset-2 ring-offset-gray-50 transition-all",
+                        pal.ring,
                         "group-hover:scale-105 group-hover:shadow-md",
                       )}
                     >
-                      {initials(person?.fullName ?? c.fullName)}
+                      <PersonAvatar
+                        name={displayName}
+                        src={person ? getEffectiveProfileImageUrl(person) : null}
+                        className="size-full rounded-full"
+                        textClassName="text-sm font-bold"
+                        loading="lazy"
+                      />
                     </div>
                     <span className="text-xs text-gray-700 font-medium truncate max-w-[72px] sm:max-w-[80px] text-center leading-tight">
-                      {(person?.fullName ?? c.fullName).split(" ")[0]}
+                      {displayName.split(" ")[0]}
                     </span>
                   </button>
                 );
