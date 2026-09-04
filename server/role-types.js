@@ -59,8 +59,28 @@ function normalizeRoleTypesInput(input) {
   return [unique[0]];
 }
 
+/** Roles a /join invite may create or lock. Staff roles stay sheet-assigned. */
+const INVITE_LOCKABLE_ROLES = new Set([
+  "Fellow",
+  "Grantee",
+  "Prize Winner",
+  "Nodee",
+]);
+
+const STAFF_ROLES = new Set(["Foresight Team", "Senior Fellow"]);
+
+function personHasStaffRole(person) {
+  const roles = Array.isArray(person?.roleTypes) && person.roleTypes.length
+    ? person.roleTypes
+    : [person?.roleType];
+  return roles.some((role) => STAFF_ROLES.has(String(role || "").trim()));
+}
+
 module.exports = {
   VALID_ROLE_TYPES,
+  INVITE_LOCKABLE_ROLES,
+  STAFF_ROLES,
+  personHasStaffRole,
   parseRoleTypes,
   serializeRoleTypes,
   normalizeRoleTypesInput,

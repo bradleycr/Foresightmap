@@ -109,3 +109,40 @@ export async function claimProfile(
     ...(email ? { email } : {}),
   });
 }
+
+export type InviteClaimPeek =
+  | { status: "not_found" }
+  | { status: "staff"; fullName: string }
+  | { status: "claimed"; fullName: string }
+  | { status: "no_email"; fullName: string }
+  | { status: "ready"; fullName: string };
+
+/**
+ * Standing /join invite: see whether a roster name can be claimed (no email leaked).
+ */
+export async function peekInviteClaim(
+  inviteToken: string,
+  fullName: string,
+): Promise<InviteClaimPeek> {
+  return postJson<InviteClaimPeek>(`${getApiBase()}/member-invite-claim`, {
+    inviteToken,
+    fullName,
+  });
+}
+
+/**
+ * Standing /join invite: set a password on an unclaimed row after matching roster email.
+ */
+export async function claimProfileWithInvite(
+  inviteToken: string,
+  fullName: string,
+  email: string,
+  password: string,
+): Promise<DirectoryAuthResult> {
+  return postJson<DirectoryAuthResult>(`${getApiBase()}/member-invite-claim`, {
+    inviteToken,
+    fullName,
+    email,
+    password,
+  });
+}

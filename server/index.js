@@ -26,6 +26,8 @@ const {
   peekClaimToken,
   claimDirectoryProfile,
   personFromRegisterInvite,
+  peekInviteClaim,
+  claimProfileWithInvite,
 } = require("./directory-auth");
 const calendarEventsHandler = require("../api/calendar-events");
 
@@ -222,6 +224,38 @@ app.post("/api/member-register", async (req, res) => {
         : 400;
     const message =
       error instanceof Error ? error.message : "Registration failed";
+    res.status(status).json({
+      error: message,
+      ...(error && typeof error === "object" && error.code ? { code: error.code } : {}),
+    });
+  }
+});
+
+/**
+ * POST /api/member-invite-claim
+ * Standing join link: peek or claim an existing unclaimed roster row (email match).
+ */
+app.post("/api/member-invite-claim", async (req, res) => {
+  try {
+    const { inviteToken, fullName, email, password } = req.body || {};
+    if (typeof password === "string" && password.length > 0) {
+      const result = await claimProfileWithInvite(
+        inviteToken,
+        fullName,
+        email,
+        password,
+      );
+      return res.json(result);
+    }
+    const result = await peekInviteClaim(inviteToken, fullName);
+    return res.json(result);
+  } catch (error) {
+    const status =
+      error && typeof error === "object" && typeof error.statusCode === "number"
+        ? error.statusCode
+        : 400;
+    const message =
+      error instanceof Error ? error.message : "Could not claim this profile";
     res.status(status).json({ error: message });
   }
 });

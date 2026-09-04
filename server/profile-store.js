@@ -5,11 +5,13 @@ const {
   normalizeBoolean,
   cloneRecord,
   loadRealDataRecords,
+  findRecordsByNormalizedName,
+  chooseCanonicalRecord,
   upsertRealDataRecord,
   sanitizeProfileImageUrl,
   profileImageUrlFromSheet,
 } = require("./realdata-store");
-const { normalizeRoleTypesInput } = require("./role-types");
+const { INVITE_LOCKABLE_ROLES, normalizeRoleTypesInput } = require("./role-types");
 const { normalizeFocusTags } = require("./focus-areas");
 const { geocodeCity } = require("./geocoding");
 const { issueDirectorySession, hashPassword } = require("./directory-auth");
@@ -322,6 +324,25 @@ function validateNewPasswordForRegister(password) {
 async function createProfile(personInput, password) {
   const validatedPassword = validateNewPasswordForRegister(password);
   const person = normalizePersonForCreate(personInput);
+  if (!INVITE_LOCKABLE_ROLES.has(person.roleType)) {
+    const err = new Error("Pick Fellow, Grantee, Prize Winner, or Nodee.");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const loaded = await loadRealDataRecords({ write: true });
+  const existing = chooseCanonicalRecord(
+    findRecordsByNormalizedName(loaded.records, person.fullName),
+  );
+  if (existing) {
+    const err = new Error(
+      "A profile with this name already exists. Claim it instead — enter the email we have on file.",
+    );
+    err.statusCode = 409;
+    err.code = "EXISTING_PROFILE";
+    throw err;
+  }
+
   const enrichedPerson = await enrichLocation(person);
 
   const now = new Date().toISOString();
@@ -338,7 +359,6 @@ async function createProfile(personInput, password) {
     },
   };
 
-  const loaded = await loadRealDataRecords({ write: true });
   const inserted = await upsertRealDataRecord(loaded.sheets, loaded.sheetName, record);
 
   return {

@@ -397,7 +397,9 @@ export async function createPerson(
         "Registration endpoint is not available. Make sure the API is running (e.g. run `pnpm dev` which starts both the app and the API).",
       );
     }
-    throw new Error(msg);
+    const err = new Error(msg) as Error & { code?: string };
+    if (typeof payload?.code === "string") err.code = payload.code;
+    throw err;
   }
 
   const createdPerson = payload.person as Person | undefined;

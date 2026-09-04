@@ -35,6 +35,7 @@ import { ConnectionsPage } from "./pages/ConnectionsPage";
 import { CalendarPage } from "./pages/CalendarPage";
 import { CheckInPage } from "./pages/CheckInPage";
 import { ClaimPage } from "./pages/ClaimPage";
+import { JoinPage } from "./pages/JoinPage";
 import { StatsPage } from "./pages/StatsPage";
 import { PollsPage } from "./pages/PollsPage";
 import { PollVotePage } from "./pages/PollVotePage";
@@ -541,6 +542,7 @@ export default function App() {
       });
       setIdentityState(nextIdentity);
     } else if (auth) {
+      setSelfPerson(updatedPerson);
       persistIdentity({
         personId: updatedPerson.id,
         fullName: updatedPerson.fullName,
@@ -609,8 +611,10 @@ export default function App() {
       : null;
   /**
    * New-account creation is invite-only and lives at /join?token=… . There is
-   * no public "Add yourself" — Bradley mints these links privately. The token
-   * is re-validated server-side on submit, so a tampered link simply fails.
+   * no public "Add yourself" — Bradley mints these links privately. The same
+   * standing URL can claim an existing unclaimed roster row (email match) or
+   * create a new Fellow / Grantee / Nodee / Prize Winner. The token is
+   * re-validated server-side on submit, so a tampered link simply fails.
    */
   const isJoinRoute = route === "/join";
   const joinToken =
@@ -727,11 +731,9 @@ export default function App() {
       onNavigateHome={() => navigate("/")}
     />
   ) : isJoinRoute ? (
-    <ProfilePage
+    <JoinPage
       identity={identity}
       people={people}
-      person={null}
-      createMode={true}
       inviteToken={joinToken}
       onNavigateHome={() => navigate("/")}
       onSignIn={handleDirectorySignIn}
@@ -739,7 +741,6 @@ export default function App() {
       onProfileSaved={handleProfileSaved}
       onExitCreateMode={() => navigate("/")}
       onRequestLocationSetup={() => navigate(profileLocationSetupPath())}
-      onAfterLocationSaved={() => navigate("/")}
     />
   ) : (
     <>

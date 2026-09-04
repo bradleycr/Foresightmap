@@ -53,6 +53,7 @@ import {
   getPrimaryRoleType,
   normalizeAffiliationInput,
   PROFILE_ROLE_TYPE_OPTIONS,
+  JOIN_ROLE_TYPE_OPTIONS,
 } from "../utils/roleTypes";
 import {
   Select,
@@ -130,6 +131,10 @@ interface ProfilePageProps {
    * the request. Undefined for the normal (existing-member) profile view.
    */
   inviteToken?: string | null;
+  /** Create-flow back control (join chooser vs map). */
+  backLabel?: string;
+  /** When create hits an existing roster name, switch to the claim path. */
+  onExistingName?: (fullName: string) => void;
 }
 
 type FieldCheckState =
@@ -158,6 +163,8 @@ export function ProfilePage({
   onAfterLocationSaved,
   onRequestLocationSetup,
   inviteToken,
+  backLabel = "Back to map",
+  onExistingName,
 }: ProfilePageProps) {
   const [draft, setDraft] = useState<Person | null>(person);
   const [isSaving, setIsSaving] = useState(false);
@@ -453,6 +460,14 @@ export function ProfilePage({
               : "Next: add your city so you appear on the map.",
           });
         } catch (error) {
+          const code = (error as { code?: string } | null)?.code;
+          if (code === "EXISTING_PROFILE") {
+            onExistingName?.(createDraft.fullName.trim());
+            toast.message("You're already on the Atlas", {
+              description: "Claim that profile with the email we have on file.",
+            });
+            return;
+          }
           toast.error("Could not create profile", {
             description: error instanceof Error ? error.message : "Please try again.",
           });
@@ -469,7 +484,7 @@ export function ProfilePage({
             className="inline-flex min-h-[44px] w-fit touch-manipulation items-center gap-2 rounded-lg py-2.5 pr-2 text-sm font-medium text-gray-600 transition-colors hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:ring-offset-2 active:bg-gray-100 sm:min-h-0"
           >
             <ArrowLeft className="size-4" />
-            Back to map
+            {backLabel}
           </button>
 
           <section className="overflow-hidden rounded-[2rem] border border-gray-200 bg-white shadow">
@@ -520,6 +535,7 @@ export function ProfilePage({
                       value={inviteLockedRole || createDraft.roleType}
                       onChange={(role) => updateCreateDraft("roleType", role)}
                       locked={Boolean(inviteLockedRole)}
+                      options={JOIN_ROLE_TYPE_OPTIONS}
                     />
                   </Field>
                   <Field label="Cohort year" required>
@@ -1760,10 +1776,12 @@ function RoleTypeSelect({
   value,
   onChange,
   locked = false,
+  options = PROFILE_ROLE_TYPE_OPTIONS,
 }: {
   value: RoleType;
   onChange: (role: RoleType) => void;
   locked?: boolean;
+  options?: RoleType[];
 }) {
   return (
     <Select
@@ -1775,7 +1793,7 @@ function RoleTypeSelect({
         <SelectValue placeholder="Select a role" />
       </SelectTrigger>
       <SelectContent>
-        {PROFILE_ROLE_TYPE_OPTIONS.map((role) => (
+        {options.map((role) => (
           <SelectItem key={role} value={role}>
             {role}
           </SelectItem>

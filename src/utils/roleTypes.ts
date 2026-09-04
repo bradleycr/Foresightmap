@@ -16,6 +16,11 @@ export const PROFILE_ROLE_TYPE_OPTIONS: RoleType[] = VALID_ROLE_TYPES.filter(
   (r) => r !== "Senior Fellow",
 );
 
+/** Roles a standing /join invite may create. Team / Senior Fellow stay staff-assigned. */
+export const JOIN_ROLE_TYPE_OPTIONS: RoleType[] = VALID_ROLE_TYPES.filter(
+  (r) => r !== "Senior Fellow" && r !== "Foresight Team",
+);
+
 export function getPrimaryRoleType(
   person: Pick<Person, "roleType" | "roleTypes"> | null | undefined,
 ): RoleType {

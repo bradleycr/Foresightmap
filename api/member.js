@@ -4,7 +4,7 @@
  * Unified member / directory auth API (Vercel Hobby plan: one function, many routes).
  *
  * Rewrites in vercel.json map legacy paths here via ?route=…
- *   login, refresh, claim, password, register, directory-names
+ *   login, refresh, claim, password, register, invite-claim, directory-names
  */
 
 const { createProfile } = require("../server/profile-store");
@@ -16,6 +16,8 @@ const {
   claimDirectoryProfile,
   changeDirectoryPassword,
   personFromRegisterInvite,
+  peekInviteClaim,
+  claimProfileWithInvite,
   readDirectoryTokenFromRequest,
 } = require("../server/directory-auth");
 
@@ -142,6 +144,35 @@ async function handleRegister(req, res) {
         : 400;
     return res.status(statusCode).json({
       error: error instanceof Error ? error.message : "Registration failed",
+      ...(error && typeof error === "object" && error.code ? { code: error.code } : {}),
+    });
+  }
+}
+
+async function handleInviteClaim(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+  try {
+    const { inviteToken, fullName, email, password } = req.body || {};
+    if (typeof password === "string" && password.length > 0) {
+      const result = await claimProfileWithInvite(
+        inviteToken,
+        fullName,
+        email,
+        password,
+      );
+      return res.status(200).json(result);
+    }
+    const result = await peekInviteClaim(inviteToken, fullName);
+    return res.status(200).json(result);
+  } catch (error) {
+    const statusCode =
+      error && typeof error === "object" && typeof error.statusCode === "number"
+        ? error.statusCode
+        : 400;
+    return res.status(statusCode).json({
+      error: error instanceof Error ? error.message : "Could not claim this profile",
     });
   }
 }
@@ -167,6 +198,7 @@ const ROUTES = {
   claim: handleClaim,
   password: handlePassword,
   register: handleRegister,
+  "invite-claim": handleInviteClaim,
   "directory-names": handleDirectoryNames,
 };
 

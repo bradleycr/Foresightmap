@@ -21,7 +21,8 @@ Important routes (implement or proxy these for a drop-in replacement):
 | GET | `/api/database` | People, travel windows, suggestions, admin users, RSVPs, events (aggregate payload) |
 | POST | `/api/member-login` | Directory sign-in |
 | POST | `/api/member-password` | Password change |
-| POST | `/api/member-register` | New directory profile |
+| POST | `/api/member-register` | New directory profile (invite token) |
+| POST | `/api/member-invite-claim` | Standing invite: peek or claim existing unclaimed row (roster email match) |
 | POST | `/api/profile` | Save profile for authenticated member |
 | GET/POST | `/api/rsvps` | Event RSVPs (`src/services/rsvp.ts`) |
 | GET/POST | `/api/polls` | Event polls (`src/services/polls.ts`) — public vote by slug; admin list with session |

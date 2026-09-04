@@ -1,6 +1,7 @@
 "use strict";
 
 const crypto = require("crypto");
+const { INVITE_LOCKABLE_ROLES, personHasStaffRole } = require("./role-types");
 const {
   loadRealDataRecords,
   findRecordsByNormalizedName,
@@ -393,7 +394,6 @@ function verifyClaimToken(token) {
  */
 
 const REGISTER_TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
-const INVITE_LOCKABLE_ROLES = new Set(["Fellow", "Grantee", "Prize Winner", "Nodee"]);
 
 function issueRegisterToken(ttlMs = REGISTER_TTL_MS, options = {}) {
   const payload = {
@@ -449,18 +449,138 @@ function verifyRegisterToken(token) {
 
 /**
  * Apply a role locked into the invite token (e.g. standing Nodee onboarding).
- * Open invites with no roleType still let the person pick on the form.
+ * Open invites with no roleType still let the person pick on the form, but
+ * never Fellow→Team: self-serve create is limited to lockable roles.
  */
 function personFromRegisterInvite(person, token) {
   const payload = verifyRegisterToken(token);
-  const roleType = String(payload.roleType || "").trim();
-  if (!roleType) return person;
-  if (!INVITE_LOCKABLE_ROLES.has(roleType)) {
-    const err = new Error("This invite link is invalid.");
+  const locked = String(payload.roleType || "").trim();
+  if (locked) {
+    if (!INVITE_LOCKABLE_ROLES.has(locked)) {
+      const err = new Error("This invite link is invalid.");
+      err.statusCode = 401;
+      throw err;
+    }
+    return { ...(person || {}), roleType: locked, roleTypes: [locked] };
+  }
+  const submitted = String(person?.roleType || "").trim();
+  if (!INVITE_LOCKABLE_ROLES.has(submitted)) {
+    const err = new Error("Pick Fellow, Grantee, Prize Winner, or Nodee.");
+    err.statusCode = 400;
+    throw err;
+  }
+  return { ...(person || {}), roleType: submitted, roleTypes: [submitted] };
+}
+
+function emailsMatch(left, right) {
+  const a = String(left || "").trim().toLowerCase();
+  const b = String(right || "").trim().toLowerCase();
+  if (!a || !b) return false;
+  const width = 128;
+  const pad = (value) => value.padEnd(width, "\0").slice(0, width);
+  return crypto.timingSafeEqual(Buffer.from(pad(a)), Buffer.from(pad(b)));
+}
+
+function findInviteClaimRecord(records, fullName) {
+  const name = String(fullName || "").trim();
+  if (!name) {
+    const err = new Error("Select your name from the directory.");
+    err.statusCode = 400;
+    throw err;
+  }
+  return chooseCanonicalRecord(findRecordsByNormalizedName(records, name));
+}
+
+function inviteClaimStatus(record) {
+  if (!record) return { status: "not_found" };
+  const fullName = record.person.fullName;
+  if (personHasStaffRole(record.person)) {
+    return { status: "staff", fullName };
+  }
+  if (record.auth.passwordHash) {
+    return { status: "claimed", fullName };
+  }
+  if (!String(record.person.email || "").trim()) {
+    return { status: "no_email", fullName };
+  }
+  return { status: "ready", fullName };
+}
+
+/**
+ * After picking a name on a standing /join link: can they claim this row?
+ * Does not reveal the roster email.
+ */
+async function peekInviteClaim(inviteToken, fullName) {
+  verifyRegisterToken(inviteToken);
+  const { records } = await loadRealDataRecords();
+  return inviteClaimStatus(findInviteClaimRecord(records, fullName));
+}
+
+/**
+ * Claim an existing unclaimed row from a standing join invite.
+ * Proof is the roster email (names are already public on the sign-in picker).
+ */
+async function claimProfileWithInvite(inviteToken, fullName, email, password) {
+  verifyRegisterToken(inviteToken);
+  const validatedPassword = validateNewPassword(password);
+  const submittedEmail = normalizeClaimEmail(email);
+  if (!submittedEmail) {
+    const err = new Error("Enter the email we have on file for this profile.");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const loaded = await loadRealDataRecords({ write: true });
+  const match = findInviteClaimRecord(loaded.records, fullName);
+  const status = inviteClaimStatus(match);
+
+  if (status.status === "not_found") {
+    const err = new Error(
+      "We could not find a directory profile with that full name. Create a new one instead.",
+    );
+    err.statusCode = 404;
+    throw err;
+  }
+  if (status.status === "staff") {
+    const err = new Error(
+      "This profile is staff-assigned. Email Bradley for a personal claim link.",
+    );
+    err.statusCode = 403;
+    throw err;
+  }
+  if (status.status === "claimed") {
+    const err = new Error(
+      "This profile is already set up. Sign in with your password instead.",
+    );
+    err.statusCode = 409;
+    throw err;
+  }
+  if (status.status === "no_email") {
+    const err = new Error(
+      "We don't have an email on file for this profile, so it can't be claimed here. Email Bradley and we'll send a personal link.",
+    );
+    err.statusCode = 400;
+    throw err;
+  }
+
+  if (!emailsMatch(match.person.email, submittedEmail)) {
+    const err = new Error("That email doesn't match this profile.");
     err.statusCode = 401;
     throw err;
   }
-  return { ...(person || {}), roleType, roleTypes: [roleType] };
+
+  const now = new Date().toISOString();
+  const updated = cloneRecord(match);
+  updated.auth.passwordHash = await hashPassword(validatedPassword);
+  updated.auth.mustChangePassword = false;
+  updated.auth.claimedAt = updated.auth.claimedAt || now;
+  updated.auth.lastPasswordChangedAt = now;
+  await upsertRealDataRecord(loaded.sheets, loaded.sheetName, updated);
+
+  return {
+    person: updated.person,
+    auth: issueDirectorySession(updated),
+  };
 }
 
 /**
@@ -610,4 +730,6 @@ module.exports = {
   issueRegisterToken,
   verifyRegisterToken,
   personFromRegisterInvite,
+  peekInviteClaim,
+  claimProfileWithInvite,
 };

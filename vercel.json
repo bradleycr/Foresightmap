@@ -9,6 +9,7 @@
     { "source": "/api/member-claim", "destination": "/api/member?route=claim" },
     { "source": "/api/member-password", "destination": "/api/member?route=password" },
     { "source": "/api/member-register", "destination": "/api/member?route=register" },
+    { "source": "/api/member-invite-claim", "destination": "/api/member?route=invite-claim" },
     { "source": "/api/directory-names", "destination": "/api/member?route=directory-names" },
     { "source": "/checkin/:slug*", "destination": "/index.html" },
     { "source": "/berlin", "destination": "/index.html" },

@@ -10,8 +10,10 @@ const {
   verifyPasswordHash,
   hashPassword,
   verifyClaimToken,
+  verifyRegisterToken,
   passwordVersion,
 } = require("./directory-auth");
+const { INVITE_LOCKABLE_ROLES, personHasStaffRole } = require("./role-types");
 
 const MOCK_DIR = path.resolve(__dirname, "../mock");
 const DATABASE_FILE = path.join(MOCK_DIR, "database.local.json");
@@ -92,6 +94,7 @@ function defaultPeople() {
       profileUrl: "",
       profileImageUrl: null,
       contactUrlOrHandle: "@alice",
+      email: "alice@example.com",
       shortProjectTagline: "Testing mock-backed local flows.",
       expandedProjectDescription: "This profile exists for local mock mode.",
       isAlumni: false,
@@ -638,6 +641,22 @@ async function createLocalProfile(personInput, password) {
   const db = await getLocalDatabase();
   const auth = await getLocalAuth();
   let person = normalizePersonForCreate(personInput);
+  if (!INVITE_LOCKABLE_ROLES.has(person.roleType)) {
+    const err = new Error("Pick Fellow, Grantee, Prize Winner, or Nodee.");
+    err.statusCode = 400;
+    throw err;
+  }
+  const duplicate = db.people.find(
+    (entry) => normalizeName(entry.fullName) === normalizeName(person.fullName),
+  );
+  if (duplicate) {
+    const err = new Error(
+      "A profile with this name already exists. Claim it instead — enter the email we have on file.",
+    );
+    err.statusCode = 409;
+    err.code = "EXISTING_PROFILE";
+    throw err;
+  }
   person = await enrichCoordinates(person);
 
   db.people.push(person);
@@ -710,6 +729,99 @@ async function saveLocalProfile(personInput, session) {
       synced: true,
       targetSheets: ["local-mock"],
     },
+  };
+}
+
+async function peekLocalInviteClaim(inviteToken, fullName) {
+  verifyRegisterToken(inviteToken);
+  const db = await getLocalDatabase();
+  const auth = await getLocalAuth();
+  const name = String(fullName || "").trim();
+  if (!name) {
+    const err = new Error("Select your name from the directory.");
+    err.statusCode = 400;
+    throw err;
+  }
+  const person = db.people.find(
+    (entry) => normalizeName(entry.fullName) === normalizeName(name),
+  );
+  if (!person) return { status: "not_found" };
+  if (personHasStaffRole(person)) {
+    return { status: "staff", fullName: person.fullName };
+  }
+  if (auth[person.id]?.passwordHash) {
+    return { status: "claimed", fullName: person.fullName };
+  }
+  if (!String(person.email || "").trim()) {
+    return { status: "no_email", fullName: person.fullName };
+  }
+  return { status: "ready", fullName: person.fullName };
+}
+
+async function claimLocalProfileWithInvite(inviteToken, fullName, email, password) {
+  verifyRegisterToken(inviteToken);
+  const validated = validateNewPasswordForRegister(password);
+  const submitted = String(email || "").trim().toLowerCase();
+  if (!submitted || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(submitted)) {
+    const err = new Error("Enter the email we have on file for this profile.");
+    err.statusCode = 400;
+    throw err;
+  }
+  const db = await getLocalDatabase();
+  const auth = await getLocalAuth();
+  const peek = await peekLocalInviteClaim(inviteToken, fullName);
+  if (peek.status === "not_found") {
+    const err = new Error(
+      "We could not find a directory profile with that full name. Create a new one instead.",
+    );
+    err.statusCode = 404;
+    throw err;
+  }
+  if (peek.status === "staff") {
+    const err = new Error(
+      "This profile is staff-assigned. Email Bradley for a personal claim link.",
+    );
+    err.statusCode = 403;
+    throw err;
+  }
+  if (peek.status === "claimed") {
+    const err = new Error(
+      "This profile is already set up. Sign in with your password instead.",
+    );
+    err.statusCode = 409;
+    throw err;
+  }
+  if (peek.status === "no_email") {
+    const err = new Error(
+      "We don't have an email on file for this profile, so it can't be claimed here. Email Bradley and we'll send a personal link.",
+    );
+    err.statusCode = 400;
+    throw err;
+  }
+  const person = db.people.find(
+    (entry) => normalizeName(entry.fullName) === normalizeName(fullName),
+  );
+  const rosterEmail = String(person.email || "").trim().toLowerCase();
+  if (rosterEmail !== submitted) {
+    const err = new Error("That email doesn't match this profile.");
+    err.statusCode = 401;
+    throw err;
+  }
+  const now = new Date().toISOString();
+  auth[person.id] = {
+    ...(auth[person.id] || {}),
+    passwordHash: await hashPassword(validated),
+    mustChangePassword: false,
+    claimedAt: auth[person.id]?.claimedAt || now,
+    lastPasswordChangedAt: now,
+  };
+  await saveLocalAuth(auth);
+  return {
+    person,
+    auth: issueDirectorySession({
+      person,
+      auth: { mustChangePassword: false },
+    }),
   };
 }
 
@@ -923,6 +1035,8 @@ module.exports = {
   refreshLocalMemberSession,
   peekLocalClaim,
   claimLocalProfile,
+  peekLocalInviteClaim,
+  claimLocalProfileWithInvite,
   createLocalProfile,
   saveLocalProfile,
   listLocalRsvps,
