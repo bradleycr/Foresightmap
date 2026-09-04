@@ -30,6 +30,7 @@ export function peekRegisterInviteRole(
       exp?: string;
     };
     if (payload.purpose !== "register") return null;
+    if (payload.roleType) return null;
     if (payload.exp && new Date(payload.exp).getTime() <= Date.now()) return null;
     const role = String(payload.roleType || "").trim();
     return INVITE_LOCKABLE_ROLES.includes(role as RoleType)

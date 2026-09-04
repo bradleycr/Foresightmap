@@ -396,18 +396,16 @@ function verifyClaimToken(token) {
 const REGISTER_TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
 
 function issueRegisterToken(ttlMs = REGISTER_TTL_MS, options = {}) {
+  if (String(options.roleType || "").trim()) {
+    throw new Error(
+      "Standing join invites are open (no role lock). Mint without --role.",
+    );
+  }
   const payload = {
     purpose: "register",
     iat: Date.now(),
     exp: new Date(Date.now() + ttlMs).toISOString(),
   };
-  const roleType = String(options.roleType || "").trim();
-  if (roleType) {
-    if (!INVITE_LOCKABLE_ROLES.has(roleType)) {
-      throw new Error(`Invite links cannot lock role "${roleType}".`);
-    }
-    payload.roleType = roleType;
-  }
   const encodedPayload = base64UrlEncode(JSON.stringify(payload));
   return `${encodedPayload}.${getSessionSignature(encodedPayload)}`;
 }
@@ -441,6 +439,9 @@ function verifyRegisterToken(token) {
   if (payload.purpose !== "register") {
     throw unauthorized("This invite link is invalid.");
   }
+  if (payload.roleType) {
+    throw unauthorized("This invite is no longer used. Use the community join link.");
+  }
   if (!payload.exp || new Date(payload.exp).getTime() <= Date.now()) {
     throw unauthorized("This invite link has expired. Ask for a fresh one.");
   }
@@ -448,21 +449,11 @@ function verifyRegisterToken(token) {
 }
 
 /**
- * Apply a role locked into the invite token (e.g. standing Nodee onboarding).
- * Open invites with no roleType still let the person pick on the form, but
- * never Fellow→Team: self-serve create is limited to lockable roles.
+ * Self-serve create is limited to lockable roles (never Team / Senior Fellow).
+ * Role-locked invite tokens were retired — the standing join link is open.
  */
 function personFromRegisterInvite(person, token) {
-  const payload = verifyRegisterToken(token);
-  const locked = String(payload.roleType || "").trim();
-  if (locked) {
-    if (!INVITE_LOCKABLE_ROLES.has(locked)) {
-      const err = new Error("This invite link is invalid.");
-      err.statusCode = 401;
-      throw err;
-    }
-    return { ...(person || {}), roleType: locked, roleTypes: [locked] };
-  }
+  verifyRegisterToken(token);
   const submitted = String(person?.roleType || "").trim();
   if (!INVITE_LOCKABLE_ROLES.has(submitted)) {
     const err = new Error("Pick Fellow, Grantee, Prize Winner, or Nodee.");

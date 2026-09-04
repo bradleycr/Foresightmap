@@ -5,16 +5,14 @@ Winners. Anyone with the link can **claim an existing unclaimed row** (name +
 roster email) or **create a new profile**. It is not one-time.
 
 Do **not** paste the live URL into this file (public repo). Mint a long-lived
-open invite (no `--role` lock):
+open invite:
 
 ```bash
 pnpm invite:link -- --days 3650 --base https://atlas.foresight.org
 ```
 
-A `--role Nodee` lock is only for Nodee-only packets. Staff (Foresight Team,
-Senior Fellow) cannot self-claim or self-create from this link.
-
-Rotate if the URL leaks beyond onboarding.
+Staff (Foresight Team, Senior Fellow) cannot self-claim or self-create from
+this link. Rotate if the URL leaks beyond onboarding.
 
 ---
 

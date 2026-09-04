@@ -7,17 +7,14 @@
  * not yet on the roster. The token is signed and time-limited; anyone with
  * the URL can create a profile until it expires (it is reusable, not one-time).
  *
- * Pass --role Nodee to lock the join form to Nodee (standing node onboarding).
- * Staff roles (Foresight Team, Senior Fellow) cannot be locked into an invite.
- *
- * For people who ARE already on the roster, use `pnpm claim:links` instead —
- * those set a password on the existing row.
+ * Role is not locked — they pick Fellow, Grantee, Nodee, or Prize Winner.
+ * Already on the roster: claim from the same /join link, or `pnpm claim:links`.
  *
  * Usage:
- *   node scripts/generate-invite-link.js [--base <url>] [--count N] [--days D] [--role Role]
+ *   node scripts/generate-invite-link.js [--base <url>] [--count N] [--days D]
  *
  * Examples:
- *   pnpm invite:link -- --role Nodee --days 365 --base https://atlas.foresight.org
+ *   pnpm invite:link -- --days 3650 --base https://atlas.foresight.org
  *   CLAIM_BASE_URL=https://atlas.foresight.org node scripts/generate-invite-link.js
  *
  * Env (loaded from .env.local / .env):
@@ -32,7 +29,7 @@ require("dotenv").config();
 const { issueRegisterToken } = require("../server/directory-auth");
 
 function parseArgs(argv) {
-  const args = { base: process.env.CLAIM_BASE_URL || "", count: 1, days: 30, role: "" };
+  const args = { base: process.env.CLAIM_BASE_URL || "", count: 1, days: 30 };
   for (let i = 2; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === "--" || arg === "--help" || arg === "-h") {
@@ -47,8 +44,10 @@ function parseArgs(argv) {
       args.days = Math.max(1, Number.parseInt(argv[i + 1] || "30", 10) || 30);
       i += 1;
     } else if (arg === "--role") {
-      args.role = String(argv[i + 1] || "").trim();
-      i += 1;
+      console.error(
+        "Role-locked invites are retired. Mint an open standing link (no --role).",
+      );
+      process.exit(1);
     }
   }
   return args;
@@ -76,16 +75,14 @@ function main() {
   }
 
   const ttlMs = args.days * 24 * 60 * 60 * 1000;
-  const options = args.role ? { roleType: args.role } : {};
   const expiresAt = new Date(Date.now() + ttlMs).toISOString().slice(0, 10);
   for (let i = 0; i < args.count; i += 1) {
-    const token = issueRegisterToken(ttlMs, options);
+    const token = issueRegisterToken(ttlMs);
     console.log(buildJoinUrl(args.base, token));
   }
 
-  const roleNote = args.role ? `, locked to ${args.role}` : "";
   console.error(
-    `\n✓ Generated ${args.count} invite link${args.count === 1 ? "" : "s"}, valid for ${args.days} day${args.days === 1 ? "" : "s"} (until ${expiresAt})${roleNote}.`,
+    `\n✓ Generated ${args.count} invite link${args.count === 1 ? "" : "s"}, valid for ${args.days} day${args.days === 1 ? "" : "s"} (until ${expiresAt}).`,
   );
 }
 
