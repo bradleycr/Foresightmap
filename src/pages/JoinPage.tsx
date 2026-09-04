@@ -129,6 +129,9 @@ export function JoinPage({
           <h1 className="mt-4 text-2xl font-semibold tracking-tight text-gray-900">
             Join The Foresight Atlas
           </h1>
+          <p className="mt-1.5 text-sm leading-6 text-gray-500">
+            Please do not share this link.
+          </p>
         </div>
         <div className="grid gap-3 p-6 sm:grid-cols-2 sm:p-8">
           <PathCard
